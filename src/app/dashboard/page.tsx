@@ -6,6 +6,7 @@ import { useEffect, useState, useRef } from 'react';
 import { signOut } from 'next-auth/react';
 import { FaLeaf, FaClock, FaShoppingCart, FaChartBar } from 'react-icons/fa';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -17,6 +18,22 @@ export default function DashboardPage() {
   const [timeLeft, setTimeLeft] = useState(initialTime);
   const [isRunning, setIsRunning] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Task List State
+  const [tasks, setTasks] = useState([
+    { id: 1, text: 'Sample Task 1', completed: false },
+    { id: 2, text: 'Sample Task 2', completed: false },
+  ]);
+  const [nextTaskId, setNextTaskId] = useState(3);
+
+  // Interactive Completion State
+  const [activeTaskId, setActiveTaskId] = useState<number | null>(null);
+  const [interactionType, setInteractionType] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [showDrag, setShowDrag] = useState(false);
+  const [showCelebrate, setShowCelebrate] = useState(false);
+  const [showInputPrompt, setShowInputPrompt] = useState(false);
+  const [inputValue, setInputValue] = useState('');
 
   // Plant growth stage: 0 = seedling, 1 = sprout, 2 = grown
   const getPlantStage = () => {
@@ -64,6 +81,79 @@ export default function DashboardPage() {
   };
   const minutes = String(Math.floor(timeLeft / 60)).padStart(2, '0');
   const seconds = String(timeLeft % 60).padStart(2, '0');
+
+  // Handle task completion and timer reduction
+  // Randomly select an interaction type
+  const interactionTypes = ['modal', 'drag', 'celebrate', 'input'];
+  const handleCompleteClick = (id: number) => {
+    if (tasks.find((t) => t.id === id)?.completed) return;
+    setActiveTaskId(id);
+    const randomType = interactionTypes[Math.floor(Math.random() * interactionTypes.length)];
+    setInteractionType(randomType);
+    if (randomType === 'modal') setShowModal(true);
+    if (randomType === 'drag') setShowDrag(true);
+    if (randomType === 'celebrate') setShowCelebrate(true);
+    if (randomType === 'input') setShowInputPrompt(true);
+  };
+
+  // Mark task as complete and reduce timer
+  const completeTask = (id: number) => {
+    setTasks((prevTasks) =>
+      prevTasks.map((task) =>
+        task.id === id && !task.completed
+          ? { ...task, completed: true }
+          : task
+      )
+    );
+    setTimeLeft((prev) => Math.max(0, prev - 5));
+    setActiveTaskId(null);
+    setInteractionType(null);
+    setShowModal(false);
+    setShowDrag(false);
+    setShowCelebrate(false);
+    setShowInputPrompt(false);
+    setInputValue('');
+  };
+
+  const handleAddTask = () => {
+    setTasks((prev) => [
+      ...prev,
+      { id: nextTaskId, text: `New Task ${nextTaskId}`, completed: false },
+    ]);
+    setNextTaskId((id) => id + 1);
+  };
+
+  const handleDeleteTask = (id: number) => {
+    setTasks((prev) => prev.filter((task) => task.id !== id));
+  };
+
+  // Drag-to-complete logic
+  const [dragged, setDragged] = useState(false);
+  const handleDragEnd = (event: React.DragEvent<HTMLDivElement>) => {
+    setDragged(false);
+    // If dropped in the right area, complete the task
+    const dropZone = document.getElementById('drop-zone');
+    const rect = dropZone?.getBoundingClientRect();
+    if (
+      rect &&
+      event.clientX >= rect.left &&
+      event.clientX <= rect.right &&
+      event.clientY >= rect.top &&
+      event.clientY <= rect.bottom
+    ) {
+      if (activeTaskId !== null) completeTask(activeTaskId);
+    }
+  };
+
+  // Celebrate animation (auto-complete after animation)
+  useEffect(() => {
+    if (showCelebrate && activeTaskId !== null) {
+      const timeout = setTimeout(() => {
+        completeTask(activeTaskId);
+      }, 1200);
+      return () => clearTimeout(timeout);
+    }
+  }, [showCelebrate, activeTaskId]);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -167,14 +257,87 @@ export default function DashboardPage() {
                   <h2 className="text-3xl md:text-4xl font-extrabold mb-4 text-black">task list</h2>
                   <div className="flex justify-between items-center mb-4">
                     <span className="font-semibold text-black">Today's Tasks</span>
-                    <button className="bg-[#23411a] hover:bg-[#2e6b2e] text-white px-4 py-2 rounded-lg text-sm font-bold">+ Add Task</button>
+                    <button onClick={handleAddTask} className="bg-[#23411a] hover:bg-[#2e6b2e] text-white px-4 py-2 rounded-lg text-sm font-bold">+ Add Task</button>
                   </div>
-                  <div className="border-2 border-blue-400 rounded-lg p-4 flex items-center justify-between bg-[#bfc7a1]">
-                    <input type="checkbox" className="h-5 w-5 rounded border-gray-300 text-green-600 focus:ring-green-500 mr-4" />
-                    <div className="flex-1"></div>
-                    <button className="text-gray-700 font-bold mr-4">Edit</button>
-                    <button className="text-red-600 font-bold">Delete</button>
+                  <div className="space-y-4">
+                    {tasks.map((task) => (
+                      <div key={task.id} className="border-2 border-blue-400 rounded-lg p-4 flex items-center justify-between bg-[#bfc7a1]">
+                        <span className={`flex-1 text-lg md:text-xl font-semibold text-green-900 ${task.completed ? 'line-through text-gray-400' : ''}`}>{task.text}</span>
+                        {task.completed ? (
+                          <span className="text-green-700 font-bold mr-4">Completed!</span>
+                        ) : (
+                          <button
+                            className="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded-lg font-bold mr-4 transition-all"
+                            onClick={() => handleCompleteClick(task.id)}
+                          >
+                            Complete
+                          </button>
+                        )}
+                        <button className="text-red-600 font-bold" onClick={() => handleDeleteTask(task.id)}>Delete</button>
+                      </div>
+                    ))}
                   </div>
+                  {/* Interactive Completion Modals/Popups */}
+                  <AnimatePresence>
+                    {showModal && interactionType === 'modal' && (
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+                        <div className="bg-white rounded-xl p-8 shadow-lg flex flex-col items-center">
+                          <h3 className="text-2xl md:text-3xl font-extrabold mb-6 text-green-900">Did you really finish this task?</h3>
+                          <div className="flex space-x-4">
+                            <button className="bg-green-700 text-white px-6 py-3 rounded-lg font-extrabold text-lg" onClick={() => activeTaskId !== null && completeTask(activeTaskId)}>Yes</button>
+                            <button className="bg-gray-300 text-black px-6 py-3 rounded-lg font-extrabold text-lg" onClick={() => { setShowModal(false); setActiveTaskId(null); setInteractionType(null); }}>No</button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                    {showDrag && interactionType === 'drag' && (
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+                        <div className="bg-white rounded-xl p-8 shadow-lg flex flex-col items-center">
+                          <h3 className="text-2xl md:text-3xl font-extrabold mb-6 text-green-900">Drag the leaf to the pot to complete!</h3>
+                          <div className="flex items-center space-x-8 mt-4">
+                            <div
+                              draggable
+                              onDragStart={() => setDragged(true)}
+                              onDragEnd={handleDragEnd}
+                              className="cursor-grab text-4xl"
+                            >🌱</div>
+                            <div id="drop-zone" className="w-20 h-20 bg-green-200 rounded-full flex items-center justify-center text-4xl">🪴</div>
+                          </div>
+                          <button className="mt-6 text-gray-700 underline text-lg font-semibold" onClick={() => { setShowDrag(false); setActiveTaskId(null); setInteractionType(null); }}>Cancel</button>
+                        </div>
+                      </motion.div>
+                    )}
+                    {showCelebrate && interactionType === 'celebrate' && (
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+                        <div className="bg-white rounded-xl p-8 shadow-lg flex flex-col items-center">
+                          <h3 className="text-2xl md:text-3xl font-extrabold mb-6 text-green-900">Great job! 🎉</h3>
+                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1.2 }} transition={{ type: 'spring', stiffness: 300 }} className="text-7xl">🎊</motion.div>
+                        </div>
+                      </motion.div>
+                    )}
+                    {showInputPrompt && interactionType === 'input' && (
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+                        <div className="bg-white rounded-xl p-8 shadow-lg flex flex-col items-center">
+                          <h3 className="text-2xl md:text-3xl font-extrabold mb-6 text-green-900">How did you finish this task?</h3>
+                          <input
+                            type="text"
+                            value={inputValue}
+                            onChange={e => setInputValue(e.target.value)}
+                            className="border rounded-lg px-4 py-3 mb-6 w-72 text-lg font-semibold text-green-900 placeholder-gray-400"
+                            placeholder="Write a short note..."
+                          />
+                          <div className="flex space-x-4">
+                            <button
+                              className="bg-green-700 text-white px-6 py-3 rounded-lg font-extrabold text-lg"
+                              disabled={!inputValue.trim()}
+                              onClick={() => activeTaskId !== null && completeTask(activeTaskId)}
+                            >Submit</button>
+                            <button className="bg-gray-300 text-black px-6 py-3 rounded-lg font-extrabold text-lg" onClick={() => { setShowInputPrompt(false); setActiveTaskId(null); setInteractionType(null); setInputValue(''); }}>Cancel</button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
             </div>
