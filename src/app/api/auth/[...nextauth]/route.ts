@@ -2,13 +2,14 @@ import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
+import { SessionStrategy } from 'next-auth';
 
-const handler = NextAuth({
+const authOptions = {
   providers: [
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
-        email: { label: "Email", type: "email" },
+        email: { label: "Email", type: "email", placeholder: "jsmith@example.com" },
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
@@ -38,26 +39,30 @@ const handler = NextAuth({
       }
     })
   ],
+  secret: process.env.NEXTAUTH_SECRET,
   session: {
-    strategy: 'jwt',
+    strategy: 'jwt' as SessionStrategy,
   },
   pages: {
-    signIn: '/login',
+    signIn: '/auth/login',
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user }: { token: any; user?: any }) {
       if (user) {
         token.id = user.id;
       }
       return token;
     },
-    async session({ session, token }) {
+    async session({ session, token }: { session: any; token: any }) {
       if (token) {
         session.user.id = token.id;
       }
       return session;
     },
   },
-});
+};
 
-export { handler as GET, handler as POST }; 
+const handler = NextAuth(authOptions);
+
+export { handler as GET, handler as POST };
+export { authOptions }; 

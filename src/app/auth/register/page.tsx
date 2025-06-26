@@ -54,7 +54,7 @@ export default function RegisterPage() {
         throw new Error(data.error || 'Something went wrong');
       }
 
-      router.push('/login');
+      router.push('/auth/login');
     } catch (error: any) {
       setError(error.message);
     } finally {
