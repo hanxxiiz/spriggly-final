@@ -216,14 +216,14 @@ export default function DashboardPage() {
               </div>
         <nav className="flex-1 flex justify-center">
           <ul className="flex space-x-8 text-green-800 font-medium">
-            <li><button onClick={() => { setShowProfile(false); setShowFocus(false); }} className="hover:underline bg-transparent">Home</button></li>
-            <li><button onClick={() => { setShowProfile(false); setShowFocus(false); }} className="hover:underline bg-transparent">Grow</button></li>
-            <li><button onClick={() => { setShowProfile(false); setShowFocus(true); }} className="hover:underline bg-transparent">Focus</button></li>
-            <li><button onClick={() => { setShowProfile(false); setShowFocus(false); }} className="hover:underline bg-transparent">My Plants</button></li>
-            <li><button onClick={() => { setShowProfile(false); setShowFocus(false); }} className="hover:underline bg-transparent">Shop</button></li>
-            <li><button onClick={() => { setShowProfile(false); setShowFocus(false); }} className="hover:underline bg-transparent">Notifications</button></li>
-            <li><button onClick={() => { setShowProfile(true); setShowFocus(false); }} className="hover:underline bg-transparent">Profile</button></li>
-            <li><button onClick={() => { setShowProfile(false); setShowFocus(false); }} className="hover:underline bg-transparent">Settings</button></li>
+            <li><button className="hover:underline bg-transparent">Home</button></li>
+            <li><button className="hover:underline bg-transparent">Grow</button></li>
+            <li><button className="hover:underline bg-transparent">Focus</button></li>
+            <li><button className="hover:underline bg-transparent">My Plants</button></li>
+            <li><button className="hover:underline bg-transparent">Shop</button></li>
+            <li><button className="hover:underline bg-transparent">Notifications</button></li>
+            <li><button className="hover:underline bg-transparent">Profile</button></li>
+            <li><button className="hover:underline bg-transparent">Settings</button></li>
           </ul>
         </nav>
       </header>
@@ -350,7 +350,7 @@ export default function DashboardPage() {
             <h3 className="text-xl font-bold text-green-800 mb-4">Daily Rewards</h3>
             <div className="flex items-center space-x-4 mb-6">
               <button className="p-2 bg-[#F4F9E7] rounded-full shadow"><FaChevronLeft /></button>
-                          <div className="flex space-x-4">
+              <div className="flex space-x-4">
                 {[0,1,2,3,4].map(i => (
                   <div key={i} className="w-20 h-20 rounded-xl bg-yellow-200 shadow" />
                 ))}
@@ -412,8 +412,8 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-sm text-black">{new Date(displayedYear, displayedMonth).toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
                 <div className="flex space-x-2">
-                  <button className="p-1 rounded hover:bg-gray-100" onClick={handlePrevMonth}><FaChevronLeft size={14} /></button>
-                  <button className="p-1 rounded hover:bg-gray-100" onClick={handleNextMonth}><FaChevronRight size={14} /></button>
+                  <button className="p-1 rounded hover:bg-gray-100"><FaChevronLeft size={14} /></button>
+                  <button className="p-1 rounded hover:bg-gray-100"><FaChevronRight size={14} /></button>
                 </div>
               </div>
               {/* Calendar grid (static for now) */}
