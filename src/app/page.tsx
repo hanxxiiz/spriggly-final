@@ -21,7 +21,7 @@ export default function LandingPage() {
           <Link href="/" className="hover:text-green-600 transition">Home</Link>
           <a href="#features" className="hover:text-green-600 transition">Features</a>
           <a href="#contact" className="hover:text-green-600 transition">Contact</a>
-          <Link href="/auth/register">
+          <Link href="/auth">
             <span className="ml-4 px-6 py-2 bg-green-900 text-white rounded-xl shadow hover:brightness-110 transition">Sign Up</span>
           </Link>
         </div>
