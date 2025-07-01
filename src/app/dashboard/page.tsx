@@ -194,7 +194,9 @@ export default function DashboardPage() {
                 </button>
               </div>
               <button className="text-green-800 hover:text-green-600 focus:outline-none">Profile</button>
-              <button className="text-green-800 hover:text-green-600 focus:outline-none">Settings</button>
+              <Link href="/dashboard/settings" legacyBehavior>
+                <a className="text-green-800 hover:text-green-600 focus:outline-none">Settings</a>
+              </Link>
             </div>
           </div>
         </div>
