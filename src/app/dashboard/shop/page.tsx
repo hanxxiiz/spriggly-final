@@ -7,7 +7,7 @@ import ShopNavbar from '../../../components/ShopNavbar';
 const items = [
   {
     title: 'Watering can',
-    price: '₵500',
+    price: '₵50',
     imageSrc: '/shop-items/watering-can.png',
     description: 'Watering can bottle can help you blahblahblahblahblahblah kapoya na aning msad men',
     onBuy: () => alert('Bought Watering can!'),
@@ -37,6 +37,13 @@ const items = [
     title: 'Misting Bottle',
     price: '₵500',
     imageSrc: '/shop-items/misting-bottle.png',
+    description: 'Misting bottle can help you blahblahblahblahblahblah kapoya na aning msad men',
+    onBuy: () => alert('Bought Misting Bottle!'),
+  },
+  {
+    title: 'Magic Dust',
+    price: '₵500',
+    imageSrc: '/shop-items/magic-dust.png',
     description: 'Misting bottle can help you blahblahblahblahblahblah kapoya na aning msad men',
     onBuy: () => alert('Bought Misting Bottle!'),
   },
