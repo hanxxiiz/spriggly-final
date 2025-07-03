@@ -51,14 +51,15 @@ const items = [
 
 const ShopPage = () => {
   return (
-    <div className="min-h-screen bg-gray-100">
-      <ShopNavbar />
-      <div className="w-full min-h-screen bg-white rounded-b-2xl">
-        <h1 className="text-4xl font-bold text-green-800 mb-8 mt-2 ml-5 pt-4">Shop</h1>
-        <div className="flex flex-wrap gap-x-12 gap-y-10 ml-22">
-          {items.map((item, idx) => (
-            <ShopItemCard key={idx} {...item} />
-          ))}
+    <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="min-h-screen bg-gray-100">
+        <div className="w-full min-h-screen bg-white rounded-b-2xl">
+          <h1 className="text-4xl font-bold text-green-800 mb-8 mt-2 ml-5 pt-4">Shop</h1>
+          <div className="flex flex-wrap gap-x-12 gap-y-10 ml-22">
+            {items.map((item, idx) => (
+              <ShopItemCard key={idx} {...item} />
+            ))}
+          </div>
         </div>
       </div>
     </div>

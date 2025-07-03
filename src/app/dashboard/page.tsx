@@ -207,29 +207,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F4F4] flex flex-col">
-      {/* Header/NavBar */}
-      <header className="bg-white shadow-sm rounded-t-xl px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <img src="/globe.svg" alt="Spriggly Logo" className="h-8 w-8" />
-          <span className="text-2xl font-bold text-green-800">Spriggly</span>
-              </div>
-        <nav className="flex-1 flex justify-center">
-          <ul className="flex space-x-8 text-green-800 font-medium">
-            <li><button className="hover:underline bg-transparent">Home</button></li>
-            <li><button className="hover:underline bg-transparent">Grow</button></li>
-            <li><button className="hover:underline bg-transparent">Focus</button></li>
-            <li><button className="hover:underline bg-transparent">My Plants</button></li>
-            <li><button className="hover:underline bg-transparent">Shop</button></li>
-            <li><button className="hover:underline bg-transparent">Notifications</button></li>
-            <li><button className="hover:underline bg-transparent">Profile</button></li>
-            <li><Link href="/dashboard/settings" className="text-green-800 hover:text-green-600 focus:outline-none">
-                Setting
-              </Link></li>
-          </ul>
-        </nav>
-      </header>
-
+    <div>
       {/* Main Content */}
       {showProfile ? (
         <main className="flex-1 flex flex-col items-center justify-start bg-[#F4F4F4] min-h-screen py-8">
@@ -241,13 +219,13 @@ export default function DashboardPage() {
               {['Focus Time', 'Tasks Completed', 'Plants', 'Highest Streak', 'Total Coins Earned'].map(label => (
                 <div key={label} className="w-56 h-48 rounded-xl bg-yellow-200 shadow-md flex items-center justify-center">
                   <span className="text-xl font-bold text-white drop-shadow-md text-center">{label}</span>
-              </div>        
+                </div>
               ))}
             </div>
             <button className="text-green-800 hover:text-green-600 focus:outline-none">Profile</button>
-              <Link href="/dashboard/settings" className="text-green-800 hover:text-green-600 focus:outline-none">
-                Setting
-              </Link>
+            <Link href="/dashboard/settings" className="text-green-800 hover:text-green-600 focus:outline-none">
+              Setting
+            </Link>
           </div>
         </main>
       ) : showFocus ? (
@@ -291,11 +269,11 @@ export default function DashboardPage() {
                   <div>
                     <label className="block text-lg font-semibold text-[#B6C24B] mb-1">Task Name</label>
                     <input type="text" className="w-full rounded-md border border-[#B6C24B] px-4 py-2 bg-[#F9FFCB] text-[#B6C24B] font-semibold focus:outline-none" />
-            </div>
+                  </div>
                   <div>
                     <label className="block text-lg font-semibold text-[#B6C24B] mb-1">Description</label>
                     <textarea className="w-full rounded-md border border-[#B6C24B] px-4 py-2 bg-[#F9FFCB] text-[#B6C24B] font-semibold focus:outline-none" rows={3} />
-          </div>
+                  </div>
                   <div className="flex flex-col md:flex-row gap-4">
                     <div className="flex-1">
                       <label className="block text-lg font-semibold text-[#B6C24B] mb-1">Priority Level</label>
@@ -304,7 +282,7 @@ export default function DashboardPage() {
                         <option>Medium</option>
                         <option>Low</option>
                       </select>
-                      </div>
+                    </div>
                     <div className="flex-1">
                       <label className="block text-lg font-semibold text-[#B6C24B] mb-1">Due Date</label>
                       <input type="date" className="w-full rounded-md border border-[#B6C24B] px-4 py-2 bg-[#F9FFCB] text-[#B6C24B] font-semibold focus:outline-none" />
@@ -335,8 +313,8 @@ export default function DashboardPage() {
                   </div>
                   <button type="button" className="mt-4 bg-[#B6C24B] text-white font-bold px-10 py-2 rounded-lg mx-auto" onClick={() => setShowFocusTimerModal(false)}>Add</button>
                 </form>
-                          </div>
-                        </div>
+              </div>
+            </div>
           )}
         </main>
       ) : (
@@ -350,7 +328,7 @@ export default function DashboardPage() {
               </h2>
               <p className="text-white font-medium mb-4">Water your goals. And maybe your real plants too!</p>
               <button className="bg-white text-green-700 font-bold px-5 py-2 rounded-lg shadow hover:bg-green-100 transition">Start now</button>
-                          </div>
+            </div>
 
             {/* Daily Rewards */}
             <h3 className="text-xl font-bold text-green-800 mb-4">Daily Rewards</h3>
@@ -398,7 +376,7 @@ export default function DashboardPage() {
                   <div className="text-white text-sm">See your focus time and productivity stats.</div>
                 </div>
                 <div className="ml-4 text-white font-bold text-2xl">&gt;</div>
-                  </div>
+              </div>
               {/* Notifications */}
               <div className="flex items-center bg-gradient-to-r from-green-400 to-green-200 rounded-xl shadow p-4">
                 <div className="bg-white rounded-lg w-12 h-12 flex items-center justify-center mr-4 font-bold">icon</div>
@@ -425,7 +403,7 @@ export default function DashboardPage() {
               {/* Calendar grid (static for now) */}
               <div className="grid grid-cols-7 gap-1 text-xs text-center text-black mb-1">
                 {["SUN","MON","TUE","WED","THU","FRI","SAT"].map(d => <div key={d}>{d}</div>)}
-                    </div>
+              </div>
               <div className="grid grid-cols-7 gap-1 text-center">
                 {/* Add empty divs for days before the 1st of the month */}
                 {Array.from({length: firstDayOfWeek}).map((_, i) => (
@@ -442,12 +420,12 @@ export default function DashboardPage() {
                     </div>
                   );
                 })}
-                    </div>
+              </div>
               <div className="flex items-center justify-between mt-2">
                 <span className="text-xs text-gray-500">Ends</span>
                 <input type="time" value="08:00" className="border rounded px-2 py-1 text-xs w-24" readOnly />
-                    </div>
-                    </div>
+              </div>
+            </div>
             {/* Incoming Tasks */}
             <div className="mt-4">
               <h4 className="font-bold text-gray-700 mb-2 text-sm">Incoming Tasks</h4>
@@ -460,7 +438,7 @@ export default function DashboardPage() {
             </div>
           </aside>
         </main>
-        )}
+      )}
     </div>
   );
 }
