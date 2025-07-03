@@ -223,7 +223,9 @@ export default function DashboardPage() {
             <li><button className="hover:underline bg-transparent">Shop</button></li>
             <li><button className="hover:underline bg-transparent">Notifications</button></li>
             <li><button className="hover:underline bg-transparent">Profile</button></li>
-            <li><button className="hover:underline bg-transparent">Settings</button></li>
+            <li><Link href="/dashboard/settings" className="text-green-800 hover:text-green-600 focus:outline-none">
+                Setting
+              </Link></li>
           </ul>
         </nav>
       </header>
@@ -239,9 +241,13 @@ export default function DashboardPage() {
               {['Focus Time', 'Tasks Completed', 'Plants', 'Highest Streak', 'Total Coins Earned'].map(label => (
                 <div key={label} className="w-56 h-48 rounded-xl bg-yellow-200 shadow-md flex items-center justify-center">
                   <span className="text-xl font-bold text-white drop-shadow-md text-center">{label}</span>
-              </div>
+              </div>        
               ))}
             </div>
+            <button className="text-green-800 hover:text-green-600 focus:outline-none">Profile</button>
+              <Link href="/dashboard/settings" className="text-green-800 hover:text-green-600 focus:outline-none">
+                Setting
+              </Link>
           </div>
         </main>
       ) : showFocus ? (
