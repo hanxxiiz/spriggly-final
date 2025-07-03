@@ -133,12 +133,6 @@ export default function SettingsPage() {
               <span className="text-gray-600 font-medium">Email:</span>
               <span className="text-[#6b942e] font-semibold">{session?.user?.email || 'Not set'}</span>
             </div>
-            <div className="flex justify-between items-center py-2">
-              <span className="text-gray-600 font-medium">Member since:</span>
-              <span className="text-[#6b942e] font-semibold">
-                {session?.user?.id ? 'Active' : 'Unknown'}
-              </span>
-            </div>
           </div>
         </div>
 
