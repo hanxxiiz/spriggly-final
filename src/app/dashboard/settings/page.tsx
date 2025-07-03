@@ -24,6 +24,12 @@ export default function SettingsPage() {
     }
   }, [session]);
 
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth');
+    }
+  }, [status, router]);
+
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -64,6 +70,7 @@ export default function SettingsPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(updateData),
       });
 
@@ -112,7 +119,6 @@ export default function SettingsPage() {
   }
 
   if (status === 'unauthenticated') {
-    router.push('/auth');
     return null;
   }
 
@@ -185,6 +191,7 @@ export default function SettingsPage() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
+                placeholder="Enter your email"
               />
             </div>
             <div className="flex flex-col gap-1">
