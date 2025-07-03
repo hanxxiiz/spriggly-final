@@ -20,18 +20,18 @@ const plants = [
     sceneUrl: 'https://prod.spline.design/7400UXKffZI7SomF/scene.splinecode', // 🌼 Another plant
   },
   {
-    plantName: '',
-    description: '',
-    locked: true,
+    plantName: 'Wild Cactus',
+    description: 'HELL YEAHHHHHH',
+    locked: false,
     level: 5,
-    sceneUrl: '',
+    sceneUrl: 'https://prod.spline.design/5M0Y5knIgZ4jDtlJ/scene.splinecode',
   },
   {
-    plantName: '',
-    description: '',
-    locked: true,
+    plantName: 'Spooky Pumpkin',
+    description: 'HELL YEAHHH BABYYYYY',
+    locked: false,
     level: 5,
-    sceneUrl: '',
+    sceneUrl: 'https://prod.spline.design/14E85RrSyiU8AVlp/scene.splinecode',
   },
 ];
 
