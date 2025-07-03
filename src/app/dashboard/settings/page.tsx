@@ -119,26 +119,26 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-[#F5F6F8]">
       {/* Navigation Bar */}
-      <nav className="bg-white border-b border-gray-300 rounded-t-2xl px-6 py-3 flex justify-between items-center" style={{borderTopLeftRadius: '16px', borderTopRightRadius: '16px'}}>
-        <div className="flex items-center gap-2">
-          <FaLeaf className="text-[#8dbb2b] text-2xl" />
-          <span className="text-2xl font-extrabold text-[#6b942e]">Spriggly</span>
-        </div>
-        <div className="flex-1 flex justify-center">
-          <div className="flex gap-8 items-center font-semibold text-[#6b942e]">
-            <Link href="/dashboard" className="hover:text-[#8dbb2b] transition">Home</Link>
-            <Link href="/dashboard?tab=grow" className="hover:text-[#8dbb2b] transition">Grow</Link>
-            <Link href="/dashboard?tab=plants" className="hover:text-[#8dbb2b] transition">My Plants</Link>
-            <Link href="/dashboard?tab=shop" className="hover:text-[#8dbb2b] transition">Shop</Link>
-            <span className="hover:text-[#8dbb2b] transition cursor-pointer">Notifications</span>
-            <span className="hover:text-[#8dbb2b] transition cursor-pointer">Profile</span>
-            <Link href="/dashboard/settings" className="hover:text-[#8dbb2b] transition font-bold">Settings</Link>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* Add icon here if needed */}
-        </div>
-      </nav>
+      <header className="bg-white shadow-sm rounded-t-xl px-6 py-3 flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <img src="/globe.svg" alt="Spriggly Logo" className="h-8 w-8" />
+          <span className="text-2xl font-bold text-green-800">Spriggly</span>
+              </div>
+        <nav className="flex-1 flex justify-center">
+          <ul className="flex space-x-8 text-green-800 font-medium">
+            <li><button className="hover:underline bg-transparent">Home</button></li>
+            <li><button className="hover:underline bg-transparent">Grow</button></li>
+            <li><button className="hover:underline bg-transparent">Focus</button></li>
+            <li><button className="hover:underline bg-transparent">My Plants</button></li>
+            <li><button className="hover:underline bg-transparent">Shop</button></li>
+            <li><button className="hover:underline bg-transparent">Notifications</button></li>
+            <li><button className="hover:underline bg-transparent">Profile</button></li>
+            <li><Link href="/dashboard/settings" className="text-green-800 hover:text-green-600 focus:outline-none">
+                Settings
+              </Link></li>
+          </ul>
+        </nav>
+      </header>
       <div className="max-w-3xl mx-auto px-4 py-8">
         <h2 className="text-3xl font-bold text-[#6b942e] mb-6 mt-2">Settings</h2>
         

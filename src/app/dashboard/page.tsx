@@ -223,7 +223,9 @@ export default function DashboardPage() {
             <li><button className="hover:underline bg-transparent">Shop</button></li>
             <li><button className="hover:underline bg-transparent">Notifications</button></li>
             <li><button className="hover:underline bg-transparent">Profile</button></li>
-            <li><button className="hover:underline bg-transparent">Settings</button></li>
+            <li><Link href="/dashboard/settings" className="text-green-800 hover:text-green-600 focus:outline-none">
+                Setting
+              </Link></li>
           </ul>
         </nav>
       </header>
@@ -244,7 +246,7 @@ export default function DashboardPage() {
             </div>
             <button className="text-green-800 hover:text-green-600 focus:outline-none">Profile</button>
               <Link href="/dashboard/settings" className="text-green-800 hover:text-green-600 focus:outline-none">
-                Settings
+                Setting
               </Link>
           </div>
         </main>
