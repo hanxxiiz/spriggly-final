@@ -221,8 +221,12 @@ export default function DashboardPage() {
             <li><button className="hover:underline bg-transparent">Focus</button></li>
             <li><button className="hover:underline bg-transparent">My Plants</button></li>
             <li><button className="hover:underline bg-transparent">Shop</button></li>
-            <li><button className="hover:underline bg-transparent">Notifications</button></li>
-            <li><button className="hover:underline bg-transparent">Profile</button></li>
+            <li><Link href="/dashboard/settings" className="text-green-800 hover:text-green-600 focus:outline-none">
+                Setting
+              </Link></li>
+            <li><Link href="/dashboard/settings" className="text-green-800 hover:text-green-600 focus:outline-none">
+                Setting
+              </Link></li>
             <li><Link href="/dashboard/settings" className="text-green-800 hover:text-green-600 focus:outline-none">
                 Setting
               </Link></li>
