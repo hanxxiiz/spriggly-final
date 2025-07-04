@@ -216,12 +216,25 @@ export default function DashboardPage() {
               </div>
         <nav className="flex-1 flex justify-center">
           <ul className="flex space-x-8 text-green-800 font-medium">
-            <li><button className="hover:underline bg-transparent">Home</button></li>
+            <li><Link href="/dashboard" className="text-green-800 hover:text-green-600 focus:outline-none">
+                Home
+              </Link></li>
             <li><button className="hover:underline bg-transparent">Grow</button></li>
-            <li><button className="hover:underline bg-transparent">Focus</button></li>
-            <li><button className="hover:underline bg-transparent">My Plants</button></li>
-            <li><button className="hover:underline bg-transparent">Shop</button></li>
-            <li><button className="hover:underline bg-transparent">Notifications</button></li>
+            <li><Link href="/dashboard/Focus" className="text-green-800 hover:text-green-600 focus:outline-none">
+                Focus
+              </Link></li>
+            <li><Link href="/dashboard/my_plants" className="text-green-800 hover:text-green-600 focus:outline-none">
+                My Plants
+              </Link></li>
+            <li><Link href="/dashboard/shop" className="text-green-800 hover:text-green-600 focus:outline-none">
+                Shop
+              </Link></li>
+              <li><Link href="/dashboard/leaderboard" className="text-green-800 hover:text-green-600 focus:outline-none">
+                Leaderboard
+              </Link></li>
+            <li><Link href="/dashboard/notifications" className="text-green-800 hover:text-green-600 focus:outline-none">
+                Notification
+              </Link></li>
             <li><button className="hover:underline bg-transparent">Profile</button></li>
             <li><Link href="/dashboard/settings" className="text-green-800 hover:text-green-600 focus:outline-none">
                 Setting
