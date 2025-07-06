@@ -1,6 +1,7 @@
 'use client'
 
-import React from 'react';
+import React, { useRef, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import ProfileStatCard from '../../../components/profile-page/ProfileStatCard';
 import { ImCamera } from "react-icons/im";
 
@@ -13,6 +14,33 @@ const stats = [
 ];
 
 const ProfilePage = () => {
+  const { data: session } = useSession();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Create a preview URL for the selected image
+      const imageUrl = URL.createObjectURL(file);
+      setProfileImage(imageUrl);
+      // You can handle the file upload here (e.g., send to server)
+      alert(`Selected file: ${file.name}`);
+    }
+  };
+
+  const username = session?.user?.name || 'User';
+  const displayName = username;
+
   return (
     <div className="bg-white min-h-screen w-full flex">
       {/* Left Gray Rectangle */}
@@ -134,17 +162,34 @@ const ProfilePage = () => {
           <div className="flex items-center gap-6 px-8 z-10 -mt-30">
             <div className="relative">
               <div className="ml-13 w-52 h-52 rounded-full bg-black border-8 border-white flex items-center justify-center text-7xl font-bold overflow-hidden">
-                <span className="text-white">S</span>
+                {profileImage ? (
+                  <img 
+                    src={profileImage} 
+                    alt="Profile" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-white">{getInitials(username)}</span>
+                )}
               </div>
-              <button
-                className="cursor-pointer absolute bottom-2 right-4 bg-lime-400 border-4 border-white w-12 h-12 rounded-full flex items-center shadow-md justify-center hover:bg-lime-500 transition"
-                onClick={() => alert('Avatar button clicked!')}
-              >
-                <ImCamera className="text-white" />
-              </button>
+              <label className="cursor-pointer absolute bottom-2 right-4" htmlFor="avatar-upload">
+                <input
+                  id="avatar-upload"
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  ref={fileInputRef}
+                  onChange={handleAvatarChange}
+                />
+                <div
+                  className="bg-lime-400 border-4 border-white w-12 h-12 rounded-full flex items-center shadow-md justify-center hover:bg-lime-500 transition"
+                >
+                  <ImCamera className="text-white" />
+                </div>
+              </label>
             </div>
             <div className="flex flex-col gap-2 relative mt-5">
-              <span className="-ml-4 text-3xl font-black text-green-900">@username</span>
+              <span className="-ml-4 text-3xl font-black text-green-900">@{displayName}</span>
             </div>
           </div>
         </div>
