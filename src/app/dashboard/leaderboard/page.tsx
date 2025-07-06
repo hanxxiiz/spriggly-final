@@ -4,11 +4,10 @@ import React from 'react';
 import ShopNavbar from '../../../components/ShopNavbar';
 
 const leaderboardData = [
-  { rank: 1, name: 'Alice', score: 1500 },
-  { rank: 2, name: 'Bob', score: 1200 },
-  { rank: 3, name: 'Charlie', score: 1100 },
-  { rank: 4, name: 'Daisy', score: 950 },
-  { rank: 5, name: 'Eve', score: 900 },
+  { rank: 1, name: 'Aaron', score: 1500 },
+  { rank: 2, name: 'Hannah', score: 1200 },
+  { rank: 3, name: 'Shayne', score: 1100 },
+  { rank: 4, name: 'Rio', score: 950 },
 ];
 
 const LeaderboardPage = () => {
@@ -27,7 +26,7 @@ const LeaderboardPage = () => {
                 <tr className="text-left text-green-800 font-bold border-b">
                   <th className="py-2">Rank</th>
                   <th className="py-2">Name</th>
-                  <th className="py-2">Score</th>
+                  <th className="py-2">Exp</th>
                 </tr>
               </thead>
               <tbody>
