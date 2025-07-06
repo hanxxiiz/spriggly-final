@@ -31,7 +31,7 @@ export default function LandingPage() {
                   isMenuShown ? '' : 'hidden'
                 }`}
               >
-                <ul className="flex flex-col lg:flex-row lg:space-x-8 mt-4 font-medium">
+                <ul className="flex flex-col lg:flex-row lg:space-x-8 font-medium">
                   <li>
                     <a 
                       href="#features"
