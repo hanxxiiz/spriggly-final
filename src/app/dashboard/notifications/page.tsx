@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import ShopNavbar from '../../../components/ShopNavbar'; // Reuse dashboard navbar
+import Navbar from '../../../components/NavigationBar.tsx';
 import NotificationCard from '../../../components/NotificationCard';
 
 // Example notification types: task, security, general
@@ -45,7 +45,7 @@ const NotificationsPage = () => {
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Navbar */}
-      <ShopNavbar />
+      <Navbar />
 
       {/* Main Content */}
       <div className="flex justify-center items-start pt-12">
