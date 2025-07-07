@@ -15,13 +15,20 @@ export async function POST(req: Request) {
 
     await connectDB();
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    // Check if user already exists by email or name (username)
+    const existingUser = await User.findOne({ $or: [ { email }, { name } ] });
     if (existingUser) {
-      return NextResponse.json(
-        { error: 'User already exists' },
-        { status: 400 }
-      );
+      if (existingUser.email === email) {
+        return NextResponse.json(
+          { error: 'Email already in use' },
+          { status: 400 }
+        );
+      } else if (existingUser.name === name) {
+        return NextResponse.json(
+          { error: 'Username already in use' },
+          { status: 400 }
+        );
+      }
     }
 
     // Create new user

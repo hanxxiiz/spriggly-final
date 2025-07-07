@@ -4,9 +4,10 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import { signOut } from 'next-auth/react';
-import { FaLeaf, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaLeaf, FaChevronLeft, FaChevronRight, FaLock, FaCoins, FaUserCircle } from 'react-icons/fa';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
+import { GiWateringCan, GiGrowth, GiSprout, GiLaurelsTrophy } from 'react-icons/gi';
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -198,6 +199,117 @@ export default function DashboardPage() {
     }
   }, [status, router]);
 
+  // Daily Rewards Logic
+  const dailyRewards = [
+    { coins: 50, booster: null, seed: null, label: 'Day 1', icons: [<FaCoins key="coins" className="text-yellow-500 text-3xl" />] },
+    { coins: 100, booster: null, seed: null, label: 'Day 2', icons: [<FaCoins key="coins" className="text-yellow-500 text-3xl" />] },
+    { coins: 150, booster: 'Watering Can', seed: null, label: 'Day 3', icons: [<FaCoins key="coins" className="text-yellow-500 text-3xl" />, <GiWateringCan key="watering" className="text-blue-400 text-2xl ml-1" />] },
+    { coins: 200, booster: null, seed: null, label: 'Day 4', icons: [<FaCoins key="coins" className="text-yellow-500 text-3xl" />] },
+    { coins: 250, booster: null, seed: 'Uncommon Seed', label: 'Day 5', icons: [<FaCoins key="coins" className="text-yellow-500 text-3xl" />, <GiSprout key="seed" className="text-green-500 text-2xl ml-1" />] },
+    { coins: 300, booster: 'Growth Booster', seed: null, label: 'Day 6', icons: [<FaCoins key="coins" className="text-yellow-500 text-3xl" />, <GiGrowth key="growth" className="text-green-700 text-2xl ml-1" />] },
+    { coins: 500, booster: 'Booster', seed: 'Rare Seed', label: 'Day 7', icons: [<FaCoins key="coins" className="text-yellow-500 text-3xl" />, <GiSprout key="rare" className="text-purple-500 text-2xl ml-1" />, <GiLaurelsTrophy key="booster" className="text-yellow-600 text-2xl ml-1" />] },
+  ];
+
+  // Backend-integrated daily rewards state
+  const [claimedDay, setClaimedDay] = useState<number>(0);
+  const [lastClaimDate, setLastClaimDate] = useState<string>('');
+  const [rewardsLoading, setRewardsLoading] = useState(true);
+  const [rewardsError, setRewardsError] = useState<string | null>(null);
+
+  // Fetch rewards progress from backend on mount
+  useEffect(() => {
+    async function fetchRewards() {
+      setRewardsLoading(true);
+      setRewardsError(null);
+      try {
+        const res = await fetch('/api/user/rewards');
+        if (!res.ok) throw new Error('Failed to fetch rewards');
+        const data = await res.json();
+        setClaimedDay(data.claimedDay || 0);
+        setLastClaimDate(data.lastClaimDate || '');
+      } catch (err: any) {
+        setRewardsError('Could not load rewards');
+      } finally {
+        setRewardsLoading(false);
+      }
+    }
+    fetchRewards();
+  }, []);
+
+  // Claim reward handler (only if a new day)
+  const [showAlreadyClaimedMsg, setShowAlreadyClaimedMsg] = useState(false);
+  const [alreadyClaimedMsgIdx, setAlreadyClaimedMsgIdx] = useState<number | null>(null);
+
+  const handleClaimReward = async (dayIdx: number) => {
+    const todayStr = getTodayString();
+    if (dayIdx !== claimedDay) return;
+    if (lastClaimDate === todayStr) {
+      setAlreadyClaimedMsgIdx(dayIdx);
+      setShowAlreadyClaimedMsg(true);
+      setTimeout(() => {
+        setShowAlreadyClaimedMsg(false);
+        setAlreadyClaimedMsgIdx(null);
+      }, 1500);
+      return;
+    }
+    let newClaimedDay = dayIdx === dailyRewards.length - 1 ? 0 : dayIdx + 1;
+    let newLastClaimDate = dayIdx === dailyRewards.length - 1 ? '' : todayStr;
+    setClaimedDay(newClaimedDay);
+    setLastClaimDate(newLastClaimDate);
+    // Update backend with debug logging
+    try {
+      console.log('Claiming reward:', { claimedDay: newClaimedDay, lastClaimDate: newLastClaimDate });
+      const res = await fetch('/api/user/rewards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ claimedDay: newClaimedDay, lastClaimDate: newLastClaimDate }),
+      });
+      const data = await res.json();
+      console.log('POST /api/user/rewards response:', res.status, data);
+    } catch (err) {
+      console.error('Error posting to /api/user/rewards:', err);
+    }
+    setRewardModalContent({ day: dayIdx, reward: dailyRewards[dayIdx] });
+    setShowRewardModal(true);
+  };
+
+  // Timer for next claim
+  const [nextClaimTimer, setNextClaimTimer] = useState('');
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    const updateTimer = () => {
+      const now = new Date();
+      const nextMidnight = new Date(now);
+      nextMidnight.setHours(24, 0, 0, 0); // local midnight
+      const diff = nextMidnight.getTime() - now.getTime();
+      if (diff > 0) {
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff / (1000 * 60)) % 60);
+        const seconds = Math.floor((diff / 1000) % 60);
+        setNextClaimTimer(
+          `${hours.toString().padStart(2, '0')}:` +
+          `${minutes.toString().padStart(2, '0')}:` +
+          `${seconds.toString().padStart(2, '0')}`
+        );
+      } else {
+        setNextClaimTimer('00:00:00');
+      }
+    };
+    updateTimer();
+    interval = setInterval(updateTimer, 1000);
+    return () => { if (interval) clearInterval(interval); };
+  }, [lastClaimDate]);
+
+  const [showRewardModal, setShowRewardModal] = useState(false);
+  const [rewardModalContent, setRewardModalContent] = useState<{ day: number; reward: typeof dailyRewards[0] } | null>(null);
+
+  // Helper to get today's date string (YYYY-MM-DD)
+  const getTodayString = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
+
   if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -213,248 +325,211 @@ export default function DashboardPage() {
         <div className="flex items-center space-x-2">
           <img src="/globe.svg" alt="Spriggly Logo" className="h-8 w-8" />
           <span className="text-2xl font-bold text-green-800">Spriggly</span>
-              </div>
+        </div>
         <nav className="flex-1 flex justify-center">
           <ul className="flex space-x-8 text-green-800 font-medium">
-            <li><button className="hover:underline bg-transparent">Home</button></li>
-            <li><button className="hover:underline bg-transparent">Grow</button></li>
-            <li><button className="hover:underline bg-transparent">Focus</button></li>
-            <li><button className="hover:underline bg-transparent">My Plants</button></li>
-            <li><button className="hover:underline bg-transparent">Shop</button></li>
-            <li><button className="hover:underline bg-transparent">Notifications</button></li>
-            <li><button className="hover:underline bg-transparent">Profile</button></li>
-            <li><button className="hover:underline bg-transparent">Settings</button></li>
+            <li><Link href="/dashboard" className="hover:font-bold">Home</Link></li>
+            <li><Link href="/dashboard" className="font-bold underline underline-offset-4">Grow</Link></li>
+            <li><Link href="/dashboard/my_plants">My Plants</Link></li>
+            <li><Link href="/dashboard/shop">Shop</Link></li>
+            <li><Link href="/dashboard/notifications">Notifications</Link></li>
+            <li><Link href="/dashboard/profile">Profile</Link></li>
+            <li><Link href="/dashboard/settings">Settings</Link></li>
           </ul>
         </nav>
       </header>
 
       {/* Main Content */}
-      {showProfile ? (
-        <main className="flex-1 flex flex-col items-center justify-start bg-[#F4F4F4] min-h-screen py-8">
-          <div className="w-full max-w-5xl">
-            <div className="rounded-2xl shadow-lg mb-10 p-12 bg-gradient-to-r from-green-400 via-yellow-300 to-yellow-200 flex items-end min-h-[140px]">
-              <span className="text-2xl md:text-3xl font-extrabold text-white">@{session?.user?.name || 'username'}</span>
-            </div>
-            <div className="flex flex-wrap gap-8 justify-center">
-              {['Focus Time', 'Tasks Completed', 'Plants', 'Highest Streak', 'Total Coins Earned'].map(label => (
-                <div key={label} className="w-56 h-48 rounded-xl bg-yellow-200 shadow-md flex items-center justify-center">
-                  <span className="text-xl font-bold text-white drop-shadow-md text-center">{label}</span>
-              </div>
-              ))}
-            </div>
-          </div>
-        </main>
-      ) : showFocus ? (
-        <main className="flex-1 flex flex-col bg-[#F4F4F4] min-h-screen py-8 px-8 relative">
-          <h1 className="text-3xl font-extrabold text-green-800 mb-8">Grow</h1>
-          <div className="flex flex-col md:flex-row gap-8 justify-center items-start">
-            {/* Focus Timer Card */}
-            <div className="bg-[#F6FFB0] rounded-2xl shadow-lg p-8 flex-1 min-w-[320px] max-w-[420px] flex flex-col items-center" style={{ minHeight: '420px' }}>
-              <h2 className="text-2xl font-bold text-[#B6C24B] mb-8">Focus Timer</h2>
-              <div className="flex items-center justify-center w-full mb-8">
-                <div className="rounded-full border-[12px] border-[#B6C24B] w-60 h-60 flex items-center justify-center bg-[#F6FFB0]">
-                  <span className="text-4xl font-bold text-[#B6C24B]">0:00</span>
-                </div>
-              </div>
-              <button className="mt-4 bg-[#B6C24B] text-white font-bold px-12 py-2 rounded-lg shadow" style={{ width: '60%' }} onClick={() => setShowFocusTimerModal(true)}>Start</button>
-            </div>
-            {/* Tasks Card */}
-            <div className="bg-[#F6FFB0] rounded-2xl shadow-lg p-8 flex-1 min-w-[320px] max-w-[420px] flex flex-col" style={{ minHeight: '420px' }}>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-[#B6C24B]">Tasks</h2>
-                <button className="bg-[#B6C24B] text-white font-bold px-4 py-1 rounded" onClick={() => setShowAddTaskModal(true)}>+ Add</button>
-              </div>
-              <div className="flex space-x-4 mb-6">
-                <button className="bg-[#C7C97A] text-white font-bold px-4 py-1 rounded">Today</button>
-                <button className="bg-[#C7C97A] text-white font-bold px-4 py-1 rounded">Upcoming</button>
-                <button className="bg-[#C7C97A] text-white font-bold px-4 py-1 rounded">Overdue</button>
-              </div>
-              <div className="flex flex-col gap-4 flex-1">
-                {[0,1,2,3].map(i => (
-                  <div key={i} className="bg-[#F9FFCB] rounded-md h-12 shadow" />
-                ))}
-              </div>
-            </div>
-          </div>
-          {/* Add Task Modal */}
-          {showAddTaskModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
-              <div className="bg-[#F6FFB0] rounded-2xl shadow-xl p-10 w-full max-w-xl flex flex-col items-center border-2 border-[#E3E7A1]">
-                <h2 className="text-3xl font-bold text-[#B6C24B] mb-8">Add Task</h2>
-                <form className="w-full flex flex-col gap-6">
-                  <div>
-                    <label className="block text-lg font-semibold text-[#B6C24B] mb-1">Task Name</label>
-                    <input type="text" className="w-full rounded-md border border-[#B6C24B] px-4 py-2 bg-[#F9FFCB] text-[#B6C24B] font-semibold focus:outline-none" />
-            </div>
-                  <div>
-                    <label className="block text-lg font-semibold text-[#B6C24B] mb-1">Description</label>
-                    <textarea className="w-full rounded-md border border-[#B6C24B] px-4 py-2 bg-[#F9FFCB] text-[#B6C24B] font-semibold focus:outline-none" rows={3} />
-          </div>
-                  <div className="flex flex-col md:flex-row gap-4">
-                    <div className="flex-1">
-                      <label className="block text-lg font-semibold text-[#B6C24B] mb-1">Priority Level</label>
-                      <select className="w-full rounded-md border border-[#B6C24B] px-4 py-2 bg-[#E3E7A1] text-[#B6C24B] font-semibold focus:outline-none">
-                        <option>High</option>
-                        <option>Medium</option>
-                        <option>Low</option>
-                      </select>
-                      </div>
-                    <div className="flex-1">
-                      <label className="block text-lg font-semibold text-[#B6C24B] mb-1">Due Date</label>
-                      <input type="date" className="w-full rounded-md border border-[#B6C24B] px-4 py-2 bg-[#F9FFCB] text-[#B6C24B] font-semibold focus:outline-none" />
-                    </div>
-                  </div>
-                  <button type="button" className="mt-4 bg-[#B6C24B] text-white font-bold px-10 py-2 rounded-lg mx-auto" onClick={() => setShowAddTaskModal(false)}>Add</button>
-                </form>
-              </div>
-            </div>
-          )}
-          {/* Focus Timer Modal */}
-          {showFocusTimerModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
-              <div className="bg-[#F6FFB0] rounded-2xl shadow-xl p-8 w-full max-w-md flex flex-col items-center border-2 border-[#E3E7A1]">
-                <h2 className="text-3xl font-bold text-[#B6C24B] mb-8">Focus Timer</h2>
-                <form className="w-full flex flex-col gap-6 items-center">
-                  <div className="flex w-full items-center justify-between mb-2">
-                    <label className="text-lg font-semibold text-[#B6C24B]">Session Duration</label>
-                    <select className="rounded-md border border-[#B6C24B] px-4 py-1 bg-[#E3E7A1] text-[#B6C24B] font-semibold focus:outline-none">
-                      <option>Custom</option>
-                      <option>25:00</option>
-                      <option>50:00</option>
-                    </select>
-                  </div>
-                  <div className="flex w-full items-center justify-between mb-2">
-                    <label className="text-lg font-semibold text-[#B6C24B]">Enter custom focus time</label>
-                    <input type="text" className="rounded-md border border-[#B6C24B] px-4 py-1 bg-[#F9FFCB] text-[#B6C24B] font-semibold focus:outline-none w-32" />
-                  </div>
-                  <button type="button" className="mt-4 bg-[#B6C24B] text-white font-bold px-10 py-2 rounded-lg mx-auto" onClick={() => setShowFocusTimerModal(false)}>Add</button>
-                </form>
-                          </div>
-                        </div>
-          )}
-        </main>
-      ) : (
-        <main className="flex-1 flex flex-col md:flex-row bg-[#F4F4F4]">
-          {/* Main Left Content */}
-          <section className="flex-1 p-8">
-            {/* Welcome Card */}
-            <div className="rounded-2xl shadow-lg mb-8 p-8 bg-gradient-to-r from-green-400 via-yellow-300 to-yellow-200">
-              <h2 className="text-2xl md:text-3xl font-extrabold text-white mb-2">
-                {status === 'authenticated' && session?.user?.name ? `Welcome back, ${session.user.name}!` : 'Welcome back!'}
-              </h2>
-              <p className="text-white font-medium mb-4">Water your goals. And maybe your real plants too!</p>
-              <button className="bg-white text-green-700 font-bold px-5 py-2 rounded-lg shadow hover:bg-green-100 transition">Start now</button>
-                          </div>
+      <main className="flex-1 flex flex-col md:flex-row bg-[#F4F4F4] p-6 gap-6">
+        {/* Left/Main Section */}
+        <section className="flex-1 flex flex-col gap-6">
+          {/* Home Title */}
+          <h1 className="text-3xl font-extrabold text-green-800 mb-2">Home</h1>
 
-            {/* Daily Rewards */}
-            <h3 className="text-xl font-bold text-green-800 mb-4">Daily Rewards</h3>
-            <div className="flex items-center space-x-4 mb-6">
-              <button className="p-2 bg-[#F4F9E7] rounded-full shadow"><FaChevronLeft /></button>
-              <div className="flex space-x-4">
-                {[0,1,2,3,4].map(i => (
-                  <div key={i} className="w-20 h-20 rounded-xl bg-yellow-200 shadow" />
-                ))}
-              </div>
-              <button className="p-2 bg-[#F4F9E7] rounded-full shadow"><FaChevronRight /></button>
-            </div>
-            <div className="grid grid-cols-2 gap-6 mb-10 max-w-2xl">
-              <div className="col-span-1 row-span-2 w-full h-40 rounded-xl bg-yellow-200 shadow" />
-              <div className="col-span-1 w-full h-20 rounded-xl bg-yellow-200 shadow" />
-              <div className="col-span-1 w-full h-20 rounded-xl bg-yellow-200 shadow" />
-            </div>
+          {/* Welcome Card */}
+          <div className="rounded-2xl shadow-lg p-8 bg-gradient-to-br from-green-400 via-yellow-300 to-yellow-200 flex flex-col gap-2 mb-2">
+            <h2 className="text-2xl font-extrabold text-white mb-2">Welcome back!</h2>
+            <p className="text-white font-medium mb-4">Kickstart your productivity. Sprout your first task today!</p>
+            <button className="bg-white text-green-700 font-bold px-5 py-2 rounded-lg shadow hover:bg-green-100 transition w-32">Grow</button>
+          </div>
 
-            {/* Explore Section */}
-            <h3 className="text-xl font-bold text-green-800 mb-4">Explore</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* My Plants */}
-              <div className="flex items-center bg-gradient-to-r from-green-400 to-green-200 rounded-xl shadow p-4">
-                <div className="bg-white rounded-lg w-12 h-12 flex items-center justify-center mr-4 font-bold">icon</div>
-                <div className="flex-1">
-                  <div className="font-bold text-white text-lg">My Plants</div>
-                  <div className="text-white text-sm">View all the plants you have grown and collected!</div>
-                </div>
-                <div className="ml-4 text-white font-bold text-2xl">&gt;</div>
-              </div>
-              {/* Grow */}
-              <div className="flex items-center bg-gradient-to-r from-green-400 to-green-200 rounded-xl shadow p-4">
-                <div className="bg-white rounded-lg w-12 h-12 flex items-center justify-center mr-4 font-bold">icon</div>
-                <div className="flex-1">
-                  <div className="font-bold text-white text-lg">Grow</div>
-                  <div className="text-white text-sm">View all the plants you have grown and collected!</div>
-                </div>
-                <div className="ml-4 text-white font-bold text-2xl">&gt;</div>
-              </div>
-              {/* Analytics */}
-              <div className="flex items-center bg-gradient-to-r from-green-400 to-green-200 rounded-xl shadow p-4">
-                <div className="bg-white rounded-lg w-12 h-12 flex items-center justify-center mr-4 font-bold">icon</div>
-                <div className="flex-1">
-                  <div className="font-bold text-white text-lg">Analytics</div>
-                  <div className="text-white text-sm">See your focus time and productivity stats.</div>
-                </div>
-                <div className="ml-4 text-white font-bold text-2xl">&gt;</div>
-                  </div>
-              {/* Notifications */}
-              <div className="flex items-center bg-gradient-to-r from-green-400 to-green-200 rounded-xl shadow p-4">
-                <div className="bg-white rounded-lg w-12 h-12 flex items-center justify-center mr-4 font-bold">icon</div>
-                <div className="flex-1">
-                  <div className="font-bold text-white text-lg">Notifications</div>
-                  <div className="text-white text-sm">Stay updated on tasks, plant growth, and rewards.</div>
-                </div>
-                <div className="ml-4 text-white font-bold text-2xl">&gt;</div>
-              </div>
-            </div>
-          </section>
-
-          {/* Sidebar */}
-          <aside className="w-full md:w-80 bg-white rounded-l-2xl shadow-lg p-6 flex flex-col border-l border-gray-200">
-            {/* Calendar */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-bold text-sm text-black">{new Date(displayedYear, displayedMonth).toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
-                <div className="flex space-x-2">
-                  <button className="p-1 rounded hover:bg-gray-100"><FaChevronLeft size={14} /></button>
-                  <button className="p-1 rounded hover:bg-gray-100"><FaChevronRight size={14} /></button>
-                </div>
-              </div>
-              {/* Calendar grid (static for now) */}
-              <div className="grid grid-cols-7 gap-1 text-xs text-center text-black mb-1">
-                {["SUN","MON","TUE","WED","THU","FRI","SAT"].map(d => <div key={d}>{d}</div>)}
-                    </div>
-              <div className="grid grid-cols-7 gap-1 text-center">
-                {/* Add empty divs for days before the 1st of the month */}
-                {Array.from({length: firstDayOfWeek}).map((_, i) => (
-                  <div key={`empty-${i}`}></div>
-                ))}
-                {Array.from({length: daysInMonth}, (_, i) => i+1).map(day => {
-                  const isToday = todayDate === day && todayMonth === displayedMonth && todayYear === displayedYear;
+          {/* Daily Rewards */}
+          <div>
+            <h3 className="text-xl font-bold text-green-800 mb-2">Daily Rewards</h3>
+            {rewardsLoading ? (
+              <div className="text-gray-500 text-sm py-4">Loading rewards...</div>
+            ) : rewardsError ? (
+              <div className="text-red-500 text-sm py-4">{rewardsError}</div>
+            ) : (
+              <div className="flex items-center gap-4 mb-2">
+                {dailyRewards.map((reward, i) => {
+                  const isClaimed = i < claimedDay;
+                  const isCurrent = i === claimedDay;
+                  const todayStr = getTodayString();
+                  const alreadyClaimedToday = isCurrent && lastClaimDate === todayStr;
                   return (
-                    <div
-                      key={day}
-                      className={`py-1 rounded-full cursor-pointer text-black ${isToday ? 'bg-blue-600 text-white font-bold' : 'hover:bg-green-100'}`}
-                    >
-                      {day}
+                    <div key={i} className="relative flex flex-col items-center">
+                      <button
+                        className={`flex flex-col items-center w-20 h-20 rounded-xl shadow transition-all duration-200 border-2 ${isClaimed ? 'bg-yellow-100 border-yellow-300 opacity-60' : isCurrent ? 'bg-yellow-200 border-yellow-400' : 'bg-gray-400 border-gray-400'} ${isCurrent ? 'hover:scale-105 cursor-pointer' : 'cursor-not-allowed'}`}
+                        disabled={!isCurrent}
+                        onClick={() => handleClaimReward(i)}
+                        aria-label={reward.label}
+                      >
+                        <div className="flex items-center justify-center h-12 w-full">{isClaimed ? <FaCoins className="text-yellow-400 text-3xl" /> : isCurrent ? reward.icons : <FaLock className="text-yellow-200 text-3xl" />}</div>
+                        <span className={`text-xs font-bold mt-1 ${isClaimed || isCurrent ? 'text-green-800' : 'text-green-800'}`}>{reward.label}</span>
+                      </button>
+                      {showAlreadyClaimedMsg && alreadyClaimedMsgIdx === i && (
+                        <div className="absolute top-full mt-1 left-1/2 -translate-x-1/2 bg-black text-white text-xs rounded px-2 py-1 shadow z-50" style={{whiteSpace:'nowrap'}}>Already claimed today</div>
+                      )}
+                      {/* Timer for next claim */}
+                      {alreadyClaimedToday && (
+                        <div className="mt-1 text-xs text-gray-600">Next reward in <span className="font-mono">{nextClaimTimer}</span></div>
+                      )}
                     </div>
                   );
                 })}
-                    </div>
-              <div className="flex items-center justify-between mt-2">
-                <span className="text-xs text-gray-500">Ends</span>
-                <input type="time" value="08:00" className="border rounded px-2 py-1 text-xs w-24" readOnly />
-                    </div>
-                    </div>
-            {/* Incoming Tasks */}
-            <div className="mt-4">
-              <h4 className="font-bold text-gray-700 mb-2 text-sm">Incoming Tasks</h4>
-              <div className="space-y-2">
-                <div className="h-6 rounded bg-red-500" />
-                <div className="h-6 rounded bg-yellow-200" />
-                <div className="h-6 rounded bg-yellow-200" />
-                <div className="h-6 rounded bg-yellow-200" />
+              </div>
+            )}
+          </div>
+
+          {/* Reward Modal */}
+          {showRewardModal && rewardModalContent && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+              <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-xs flex flex-col items-center border-2 border-yellow-200">
+                <h2 className="text-2xl font-bold text-green-700 mb-4 text-center">Congratulations!</h2>
+                <div className="mb-2 text-lg text-green-800 font-semibold text-center">You've claimed your Day {rewardModalContent.day + 1} reward:</div>
+                <div className="flex flex-col items-center gap-2 mb-4">
+                  <div className="flex gap-2 items-center justify-center">
+                    {dailyRewards[rewardModalContent.day].icons}
+                  </div>
+                  <div className="text-sm text-gray-700 mt-2">
+                    {dailyRewards[rewardModalContent.day].coins} coins<br />
+                    {dailyRewards[rewardModalContent.day].booster && <span>+ {dailyRewards[rewardModalContent.day].booster}<br /></span>}
+                    {dailyRewards[rewardModalContent.day].seed && <span>+ {dailyRewards[rewardModalContent.day].seed}<br /></span>}
+                  </div>
+                </div>
+                <button className="mt-2 bg-yellow-200 text-green-800 font-bold px-8 py-2 rounded-lg shadow hover:bg-yellow-100 transition" onClick={() => setShowRewardModal(false)}>Close</button>
               </div>
             </div>
-          </aside>
-        </main>
-        )}
+          )}
+
+          {/* Recent Progress */}
+          <div>
+            <h3 className="text-xl font-bold text-green-800 mb-2">Recent</h3>
+            <div className="flex gap-6">
+              {/* Progress Card */}
+              <div className="flex-1 rounded-2xl shadow-lg bg-gradient-to-br from-green-200 via-green-100 to-yellow-100 flex items-center p-8 min-h-[140px]">
+                <span className="text-6xl font-extrabold text-green-800 mr-8">53%</span>
+                <div className="flex-1 flex flex-col justify-center">
+                  <span className="text-green-800 font-medium mb-2">Your Wild Cactus is almost complete. Continue growing now!</span>
+                  <button className="bg-yellow-200 text-green-800 font-bold px-5 py-2 rounded-lg shadow hover:bg-yellow-100 transition w-32">Grow</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Cards: Shop, Focus, My Plants */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2">
+            {/* Shop */}
+            <Link href="/dashboard/shop" className="rounded-xl bg-green-200 shadow flex flex-col items-center justify-center p-4 min-h-[120px] transition hover:scale-105 cursor-pointer">
+              <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center mb-2">icon</div>
+              <div className="font-bold text-green-800">Shop</div>
+              <div className="text-green-800 text-xs text-center">New boosters and seed packs are in stock. Check it out now!</div>
+            </Link>
+            {/* Focus */}
+            <Link href="/dashboard/Focus" className="rounded-xl bg-green-200 shadow flex flex-col items-center justify-center p-4 min-h-[120px] transition hover:scale-105 cursor-pointer">
+              <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center mb-2">icon</div>
+              <div className="font-bold text-green-800">Focus</div>
+              <div className="text-green-800 text-xs text-center">Start a productive day with focus sessions and task management.</div>
+            </Link>
+            {/* My Plants */}
+            <Link href="/dashboard/my_plants" className="rounded-xl bg-green-200 shadow flex flex-col items-center justify-center p-4 min-h-[120px] transition hover:scale-105 cursor-pointer">
+              <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center mb-2">icon</div>
+              <div className="font-bold text-green-800">My Plants</div>
+              <div className="text-green-800 text-xs text-center">Stay updated on tasks, plant growth, and rewards.</div>
+            </Link>
+          </div>
+        </section>
+
+        {/* Sidebar: Profile Card + Leaderboard */}
+        <aside className="w-full md:w-80 bg-white rounded-2xl shadow-lg p-6 flex flex-col gap-6 border-l border-gray-200 mt-8 md:mt-0">
+          {/* Profile Card */}
+          <div className="w-full rounded-2xl shadow bg-white flex flex-col items-center justify-center p-6 mb-2">
+            <div className="w-16 h-10 rounded-full bg-gray-200 flex items-center justify-center mb-2">
+              <span className="w-10 h-10 bg-gray-400 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-white mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="9" r="3.5" fill="#b0b7be" /><path d="M12 14c-4 0-6 2-6 3.5V19h12v-1.5c0-1.5-2-3.5-6-3.5z" fill="#b0b7be" /></svg>
+              </span>
+            </div>
+            <div className="font-bold text-green-800 text-lg text-center">{session?.user?.name || 'Username'}</div>
+            <div className="text-gray-500 text-sm mb-3 text-center">Level #</div>
+            <button className="bg-yellow-200 text-green-800 font-bold px-6 py-1 rounded shadow hover:bg-yellow-100 transition text-sm">View</button>
+          </div>
+          {/* Leaderboard */}
+          <h3 className="text-xl font-bold text-green-800 mb-4">Leaderboard</h3>
+          <LeaderboardSidebar />
+        </aside>
+      </main>
+    </div>
+  );
+}
+
+function LeaderboardSidebar() {
+  const [users, setUsers] = useState<{ _id?: string; name?: string }[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    async function fetchUsers() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch('/api/leaderboard');
+        if (!res.ok) throw new Error('Failed to fetch leaderboard');
+        const data = await res.json();
+        setUsers(data.users || []);
+      } catch (err) {
+        setError('Could not load leaderboard');
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchUsers();
+  }, []);
+
+  if (loading) return <div className="text-center py-4">Loading...</div>;
+  if (error) return <div className="text-center text-red-500 py-4">{error}</div>;
+
+  const displayUsers = users.slice(0, 3);
+
+  return (
+    <div>
+      <div
+        className="flex flex-col gap-4"
+        aria-label="Leaderboard user list"
+      >
+        {displayUsers.map((user, i) => (
+          <div key={user._id || user.name || i} className="flex items-center bg-yellow-200 rounded-xl p-4 shadow">
+            <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center text-3xl text-gray-500 mr-4">
+              <svg className="w-8 h-8 text-white mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-label="User avatar"><circle cx="12" cy="9" r="3.5" fill="#b0b7be" /><path d="M12 14c-4 0-6 2-6 3.5V19h12v-1.5c0-1.5-2-3.5-6-3.5z" fill="#b0b7be" /></svg>
+            </div>
+            <div className="flex-1">
+              <div className="font-bold text-green-800">{user.name || 'Username'}</div>
+              <div className="text-gray-600 text-xs">Level #</div>
+              <div className="text-gray-600 text-xs">XP: #   S:#</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      {users.length > 3 && (
+        <button
+          className="bg-yellow-200 text-green-800 font-bold px-4 py-1 rounded shadow hover:bg-yellow-100 transition text-sm mt-2 w-full focus:outline-none focus:ring-2 focus:ring-green-400"
+          aria-label="View all users"
+          onClick={() => router.push('/dashboard/leaderboard')}
+        >
+          View all
+        </button>
+      )}
     </div>
   );
 }
