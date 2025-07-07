@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
   title: 'Spriggly',
-  description: 'A simple Grow a Garden game totally not inspired by Roblox',
+  description: 'From goals to growth—one Sprig at a time.',
 };
 
 export default function RootLayout({
