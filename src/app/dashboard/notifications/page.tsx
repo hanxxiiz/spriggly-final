@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import Navbar from '../../../components/NavigationBar.tsx';
+import Navbar from '../../../components/NavigationBar';
 import NotificationCard from '../../../components/NotificationCard';
 
 // Example notification types: task, security, general
