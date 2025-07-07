@@ -6,7 +6,12 @@ import { useRouter } from 'next/navigation';
 import { MdEmail } from 'react-icons/md';
 import { RiLockPasswordLine } from 'react-icons/ri';
 import { FaUser } from 'react-icons/fa';
-import { FcGoogle } from 'react-icons/fc';
+import { Poppins } from 'next/font/google';
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+});
 
 export default function AuthForm() {
   const [isActive, setIsActive] = useState(false);
@@ -19,13 +24,19 @@ export default function AuthForm() {
   const [signUpLoading, setSignUpLoading] = useState(false);
   const [agree, setAgree] = useState(false);
 
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
   const showRegister = () => {
+    setIsTransitioning(true);
+    setTimeout(() => setIsTransitioning(false), 600); 
     setIsActive(true);
     setSignInError('');
     setSignUpError('');
   };
 
   const showLogin = () => {
+    setIsTransitioning(true);
+    setTimeout(() => setIsTransitioning(false), 600); 
     setIsActive(false);
     setSignInError('');
     setSignUpError('');
@@ -113,65 +124,46 @@ export default function AuthForm() {
     }
   };
 
-  // FOR GOOGLE SIGN IN !!! TO BE IMPLEMENTED !!!
-  const handleGoogleSignIn = async () => {
-    try {
-      await signIn('google', {
-        callbackUrl: '/dashboard',
-      });
-    } catch (error) {
-      setSignInError('Failed to sign in with Google');
-    }
-  };
-
   return (
-    <main
-      className="min-h-screen flex items-center justify-center text-white"
-      style={{
-        background: 'linear-gradient(to right, #06231d, #0c342c, #076653)',
-      }}
-    >
-      <div className={`relative w-[900px] h-[600px] max-md:h-calc(100vh) bg-white rounded-[30px] shadow-[0_0_30px_rgba(0,0,0,0.2)] m-5 overflow-hidden transition-all duration-[600ms] ease-in-out ${isActive ? 'active' : ''}`}>
+    <div className={`${poppins.className} min-h-screen bg-gradient-to-r from-slate-900 via-emerald-900 to-teal-800 flex items-center justify-center p-5`}>
+      <div className={`relative w-full max-w-4xl h-[550px] bg-white rounded-3xl shadow-2xl overflow-hidden transition-all duration-1000 ${isActive ? 'active' : ''}`}>
         
-        {/* SIGN IN FORM */}
-        <div className={`absolute w-1/2 max-md:bottom-0 h-full max-md:w-full max-md:h-[70%] flex items-center justify-center text-[#333] text-center p-10 z-[1] transition-all duration-[600ms] ease-in-out ${
-          isActive ? 'right-full invisible max-md:right-0 max-md:bottom-[30%]' : 'right-0 visible'
-        }`}>
-          <form onSubmit={handleSignIn}>
-            <h1 className="text-[36px] font-bold my-2">Sign in</h1>
+        {/* SIGNIN FORM */}
+        <div className={`absolute ${isActive ? 'right-1/2' : 'right-0'} w-1/2 h-full bg-white flex items-center justify-center text-slate-800 text-center 
+          p-10 z-10 transition-all duration-700 ease-in-out delay-1000 max-md:w-full max-md:h-[70%] max-md:bottom-0 max-md:right-0 ${isActive ? 'max-md:bottom-[30%]' : ''}`}>
+          <form onSubmit={handleSignIn} className="w-full max-w-sm">
+            <h1 className="text-4xl font-bold mb-8 text-slate-800">Sign in</h1>
             
             {signInError && (
-              <div className="w-full mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
-                <div className="text-sm text-red-700">{signInError}</div>
+              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+                {signInError}
               </div>
             )}
             
-            <div className="relative my-2">
-              <MdEmail className="absolute right-10 top-1/2 -translate-y-1/2 text-[20px] text-[#888]" />
+            <div className="relative mb-6 max-md:mb-2">
               <input
-                id="signin-email"
-                name="email"
                 type="email"
-                required
-                className="w-full pt-[13px] pr-[50px] pb-[13px] pl-[20px] bg-[#eee] border-none rounded-xl outline-none text-[16px] text-[#333] font-medium placeholder:text-[#888] placeholder:font-normal"
+                name="email"
                 placeholder="Email"
-              />
-            </div>
-            
-            <div className="relative my-2">
-              <RiLockPasswordLine className="absolute right-10 top-1/2 -translate-y-1/2 text-[20px] text-[#888]" />
-              <input
-                id="signin-password"
-                name="password"
-                type="password"
                 required
-                className="w-full pt-[13px] pr-[50px] pb-[13px] pl-[20px] bg-[#eee] border-none rounded-xl outline-none text-[16px] text-[#333] font-medium placeholder:text-[#888] placeholder:font-normal"
-                placeholder="Password"
+                className="w-full py-3 px-5 pr-12 bg-gray-100 rounded-lg border-none outline-none text-base max-md:text-sm text-slate-800 font-medium placeholder-gray-500"
               />
+              <MdEmail className="absolute right-5 top-1/2 transform -translate-y-1/2 text-xl text-gray-500" />
             </div>
             
-            <div className="w-full text-right mt-[-30px] mb-[15px] ">
-              <a href="#" className="text-[14.5px] text-[#333] no-underline hover:underline">
+            <div className="relative mb-1">
+              <input
+                type="password"
+                name="password"
+                placeholder="Password"
+                required
+                className="w-full py-3 px-5 pr-12 bg-gray-100 rounded-lg border-none outline-none text-base max-md:text-sm text-slate-800 font-medium placeholder-gray-500"
+              />
+              <RiLockPasswordLine className="absolute right-5 top-1/2 transform -translate-y-1/2 text-xl text-gray-500" />
+            </div>
+            
+            <div className="text-left ml-4 mb-6 max-md:mb-4">
+              <a href="#" className="text-sm max-md:text-xs text-slate-800 hover:text-blue-600 transition-colors">
                 Forgot password?
               </a>
             </div>
@@ -182,164 +174,127 @@ export default function AuthForm() {
               className="w-full h-[48px] text-white font-semibold text-[16px] rounded-xl shadow-lg border-none cursor-pointer 
                       bg-gradient-to-tr from-[#076653] to-[#0c342c] shadow-sm
                       hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
-                      transition-transform duration-300 ease-in-out"
-            >
+                      transition-transform duration-300 ease-in-out"             >
               {signInLoading ? 'Signing in...' : 'Sign in'}
-            </button>
-            
-            <div className="flex items-center gap-4 my-2">
-              <div className="h-px flex-1 bg-[#ccc]"></div>
-              <p className="text-[14.5px] text-[#888]">or</p>
-              <div className="h-px flex-1 bg-[#ccc]"></div>
-            </div>
-            
-            <button
-              type="button"
-              onClick={handleGoogleSignIn}
-              className="flex items-center justify-center gap-3 w-full px-6 py-3 bg-white border border-gray-300 rounded-xl shadow-sm hover:scale-105 
-                      transition-transform duration-300 ease-in-out cursor-pointer"
-            >
-              <FcGoogle className="text-2xl" />
-              <span className="text-sm font-medium text-gray-700">
-                Sign in with Google
-              </span>
             </button>
           </form>
         </div>
 
         {/* SIGN UP FORM */}
-        <div className={`absolute w-1/2 max-md:bottom-0 h-full max-md:w-full max-md:h-[70%] flex items-center justify-center text-[#333] text-center p-10 z-[1] transition-all duration-[600ms] ease-in-out ${
-          isActive ? 'left-0 opacity-100 max-md:left-0 max-md:bottom-[30%] pointer-events-auto visible' : 'left-0 opacity-0 invisible pointer-events-none'
-        }`}>
-          <form onSubmit={handleSignUp}>
-            <h1 className="text-[36px] font-bold my-2">Sign up</h1>
+        <div className={`absolute ${isActive ? 'right-1/2 visible' : 'right-0 invisible'} w-1/2 h-full bg-white flex items-center justify-center text-slate-800 text-center p-10 z-10 transition-all duration-700 ease-in-out delay-1000 max-md:w-full max-md:h-[70%] max-md:bottom-0 max-md:right-0 ${isActive ? 'max-md:bottom-[30%] max-md:visible' : 'max-md:invisible'}`}>
+          <form onSubmit={handleSignUp} className="w-full max-w-sm">
+            <h1 className="max-md:mt-20 text-4xl font-bold mb-6 text-slate-800">Sign up</h1>
             
             {signUpError && (
-              <div className="w-full mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
-                <div className="text-sm text-red-700">{signUpError}</div>
+              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+                {signUpError}
               </div>
             )}
             
-            <div className="relative my-2">
-              <FaUser className="absolute right-10 top-1/2 -translate-y-1/2 text-[20px] text-[#888]" />
+            <div className="relative mb-6 max-md:mb-2">
               <input
-                id="signup-username"
-                name="username"
                 type="text"
-                required
-                className="w-full pt-[13px] pr-[50px] pb-[13px] pl-[20px] bg-[#eee] border-none rounded-xl outline-none text-[16px] text-[#333] font-medium placeholder:text-[#888] placeholder:font-normal"
+                name="username"
                 placeholder="Username"
+                required
+                className="w-full py-3 px-5 pr-12 bg-gray-100 rounded-lg border-none outline-none text-base max-md:text-sm text-slate-800 font-medium placeholder-gray-500"
               />
+              <FaUser className="absolute right-5 top-1/2 transform -translate-y-1/2 text-xl text-gray-500" />
             </div>
             
-            <div className="relative my-2">
-              <MdEmail className="absolute right-10 top-1/2 -translate-y-1/2 text-[20px] text-[#888]" />
+            <div className="relative mb-6 max-md:mb-2">
               <input
-                id="signup-email"
-                name="email"
                 type="email"
-                required
-                className="w-full pt-[13px] pr-[50px] pb-[13px] pl-[20px] bg-[#eee] border-none rounded-xl outline-none text-[16px] text-[#333] font-medium placeholder:text-[#888] placeholder:font-normal"
+                name="email"
                 placeholder="Email"
+                required
+                className="w-full py-3 px-5 pr-12 bg-gray-100 rounded-lg border-none outline-none text-base max-md:text-sm text-slate-800 font-medium placeholder-gray-500"
               />
+              <MdEmail className="absolute right-5 top-1/2 transform -translate-y-1/2 text-xl text-gray-500" />
             </div>
             
-            <div className="relative my-2">
-              <RiLockPasswordLine className="absolute right-10 top-1/2 -translate-y-1/2 text-[20px] text-[#888]" />
+            <div className="relative mb-6 max-md:mb-2">
               <input
-                id="signup-password"
+                type="password"
                 name="password"
-                type="password"
-                required
-                className="w-full pt-[13px] pr-[50px] pb-[13px] pl-[20px] bg-[#eee] border-none rounded-xl outline-none text-[16px] text-[#333] font-medium placeholder:text-[#888] placeholder:font-normal"
                 placeholder="Password"
-              />
-            </div>
-            
-            <div className="relative my-2">
-              <RiLockPasswordLine className="absolute right-10 top-1/2 -translate-y-1/2 text-[20px] text-[#888]" />
-              <input
-                id="signup-confirmPassword"
-                name="confirmPassword"
-                type="password"
                 required
-                className="w-full pt-[13px] pr-[50px] pb-[13px] pl-[20px] bg-[#eee] border-none rounded-xl outline-none text-[16px] text-[#333] font-medium placeholder:text-[#888] placeholder:font-normal"
-                placeholder="Confirm Password"
+                className="w-full py-3 px-5 pr-12 bg-gray-100 rounded-lg border-none outline-none text-base max-md:text-sm text-slate-800 font-medium placeholder-gray-500"
               />
+              <RiLockPasswordLine className="absolute right-5 top-1/2 transform -translate-y-1/2 text-xl text-gray-500" />
             </div>
             
-            <div className="flex items-center justify-start my-3 px-2">
+            <div className="relative mb-2">
               <input
-                id="terms"
-                name="terms"
-                type="checkbox"
-                checked={agree}
-                onChange={e => setAgree(e.target.checked)}
-                className="h-4 w-4 text-[#076653] focus:ring-[#076653] border-gray-300 rounded mr-2"
+                type="password"
+                name="confirmPassword"
+                placeholder="Confirm Password"
+                required
+                className="w-full py-3 px-5 pr-12 bg-gray-100 rounded-lg border-none outline-none text-base max-md:text-sm text-slate-800 font-medium placeholder-gray-500"
               />
-              <label htmlFor="terms" className="text-sm text-[#333]">
-                I accept and agree to the{' '}
-                <a href="#" className="underline text-[#076653] hover:text-[#0c342c]">Terms of Use</a>.
+              <RiLockPasswordLine className="absolute right-5 top-1/2 transform -translate-y-1/2 text-xl text-gray-500" />
+            </div>
+            
+            <div className="flex items-center ml-2 mb-6">
+              <input
+                type="checkbox"
+                id="agree"
+                checked={agree}
+                onChange={(e) => setAgree(e.target.checked)}
+                className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor="agree" className="text-sm max-md:text-xs text-slate-600">
+                I agree to the{' '}
+                <a href="#" className="text-[#0c342c] hover:text-[#076653]">
+                  Terms of Use
+                </a>
               </label>
             </div>
             
             <button
               type="submit"
               disabled={signUpLoading}
-              className="w-full h-[48px] my-2 text-white font-semibold text-[16px] rounded-xl shadow-lg border-none cursor-pointer 
+              className="w-full h-[48px] text-white font-semibold text-[16px] rounded-xl shadow-lg border-none cursor-pointer 
                       bg-gradient-to-tr from-[#076653] to-[#0c342c] shadow-sm
                       hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
-                      transition-transform duration-300 ease-in-out"          
-            >
-              {signUpLoading ? 'Signing up...' : 'Sign up'}
+                      transition-transform duration-300 ease-in-out"             >
+              {signUpLoading ? 'Creating account...' : 'Sign up'}
             </button>
           </form>
         </div>
 
-        {/* TOGGLE BOX */}
-        <div className={`absolute w-full h-full transition-all duration-[1800ms] ease-in-out
-          before:absolute before:content-[''] before:w-[300%] before:h-full before:bg-gradient-to-bl before:from-[#e2fbce] before:via-[#e3ef26] before:to-[#076653] before:rounded-[150px] before:z-[2] before:transition-all before:duration-[1800ms] before:ease-in-out
-          max-md:before:left-0  max-md:before:top-[-270%]  max-md:before:w-full  max-md:before:h-[300%]  max-md:before:rounded-[20vw]  ${
-          isActive 
-            ? 'before:left-1/2 max-md:before:left-0 max-md:before:top-[70%]' 
-            : 'before:left-[-250%]'
-        }`}>
-          
-          {/* TOGGLE LEFT PANEL*/}
-          <div className={`absolute w-1/2 max-md:w-full h-full max-md:h-[30%] max-md:right-0 max-md:bottom-0 text-white flex flex-col justify-center items-center z-[2] transition-all duration-[600ms] ease-in-out ${
-            isActive 
-              ? 'right-0 opacity-100 delay-[1200ms] max-md:bottom-0 ' 
-              : 'right-[-50%] opacity-0 delay-[600ms]' 
-          }`}>
-            <h1 className="text-4xl max-md:text-3xl font-bold my-1 text-white">Welcome back!</h1>
-            <p className="my-1 text-sm max-md:text-xs text-center ">Already have an account?</p>
-            <button 
-              type="button" 
-              onClick={showLogin}
-              className="w-[160px] h-[46px] max-md:w-28 max-md:h-10 bg-transparent border-2 border-white shadow-none rounded-xl text-white hover:bg-white hover:text-[#0c342c] transition-all duration-300 cursor-pointer"
-            >
-              Sign in
-            </button>
-          </div>
+        {/* Toggle Panel Background */}
+        <div className="absolute w-full h-full">
+          <div className={`absolute ${isActive ? 'left-1/2' : '-left-[250%]'} w-[300%] h-full 
+          bg-gradient-to-bl from-[#e2fbce] via-[#e3ef26] to-[#076653] rounded-[150px] z-20 transition-all duration-1000 ease-in-out 
+          max-md:w-full max-md:h-[300%] max-md:rounded-[20vw] max-md:left-0 ${isActive ? 'max-md:top-[80%]' : 'max-md:-top-[270%]'}`}></div>
+        </div>
 
-          {/* TOGGLE RIGHT PANEL*/}
-          <div className={`absolute w-1/2 max-md:w-full h-full max-md:h-[30%] max-md:top-0 text-white flex flex-col justify-center items-center z-[2] transition-all duration-[600ms] ease-in-out ${
-            isActive 
-              ? 'left-[-50%] opacity-0 delay-[600ms] max-md:left-0 max-md:top-[-30%]' 
-              : 'left-0 opacity-100 delay-[1200ms]'
-          }`}>
-            <h1 className="text-4xl max-md:text-3xl font-bold m-1 text-white">Welcome!</h1>
-            <p className="my-1 text-sm max-md:text-xs text-center ">Don't have an account?</p>
-            <button 
-              type="button" 
-              onClick={showRegister}
-              className="w-[160px] h-[46px] max-md:w-28 max-md:h-10 bg-transparent border-2 border-white shadow-none rounded-xl text-white hover:bg-white hover:text-[#0c342c] transition-all duration-300 cursor-pointer"
-            >
-              Sign up
-            </button>
-          </div>
+
+        {/* Toggle Panel Left */}
+        <div className={`absolute ${isActive ? '-left-1/2' : 'left-0'} w-1/2 h-full text-white flex flex-col justify-center items-center transition-all duration-700 ease-in-out z-30 ${isActive ? 'delay-500' : 'delay-1000'} max-md:w-full max-md:h-[30%] max-md:top-0 max-md:left-0 ${isActive ? 'max-md:-top-[30%] max-md:invisible' : 'max-md:visible'}`}>
+          <h1 className="text-4xl max-md:text-2xl font-bold mb-1 max-md:mb-0 ">Hello, Welcome!</h1>
+          <p className="text-base max-md:text-xs mb-5 max-md:mb-2 text-center px-8">Don't have an account?</p>
+          <button
+            onClick={showRegister}
+            className="w-40 h-12 max-md:h-7 max-md:w-25 bg-transparent border-2 border-white rounded-lg cursor-pointer text-base max-md:text-xs  text-white font-semibold hover:bg-white hover:text-[#0c342c] transition-all duration-200"
+          >
+            Sign up
+          </button>
+        </div>
+
+        {/* Toggle Panel Right */}
+        <div className={`absolute ${isActive ? 'right-0' : '-right-1/2'} w-1/2 h-full text-white flex flex-col justify-center items-center transition-all duration-700 ease-in-out z-30 ${isActive ? 'delay-1000' : 'delay-500'} max-md:w-full max-md:h-[20%] max-md:right-0 max-md:bottom-0 ${isActive ? 'max-md:visible' : 'max-md:invisible'}`}>
+          <h1 className="text-4xl max-md:text-2xl font-bold mb-1 max-md:mb-0 ">Welcome Back!</h1>
+          <p className="text-base max-md:text-xs mb-5 max-md:mb-2 text-center px-8">Already have an account?</p>
+          <button
+            onClick={showLogin}
+            className="w-40 h-12 max-md:h-7 max-md:w-25 bg-transparent border-2 border-white rounded-lg cursor-pointer text-base max-md:text-xs  text-white font-semibold hover:bg-white hover:text-[#0c342c] transition-all duration-200"
+          >
+            Sign in
+          </button>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
