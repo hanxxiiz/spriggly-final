@@ -121,28 +121,22 @@ export default function DashboardPage() {
 
   // Determine reward state for each day using claimedDays from backend
   function getRewardState(day: number) {
-    const todayStr = getTodayStr();
     const claimedDays = dailyRewards.claimedDays || [];
-    // Day 1 is the first claim, Day 2 is the second, etc.
-    if (claimedDays.length === 0) return day === 1 ? 'current' : 'locked';
-    if (day < claimedDays.length + 1) return 'claimed';
-    if (day === claimedDays.length + 1) {
-      // Only allow claim if today is not in claimedDays
-      return claimedDays.includes(todayStr) ? 'claimed' : 'current';
-    }
+    if (day <= claimedDays.length) return 'claimed';
+    if (day === claimedDays.length + 1) return 'current';
     return 'locked';
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F4F4] flex flex-col items-center py-4">
+    <div className="min-h-screen bg-[#F4F4F4] flex flex-col items-center py-4 overflow-x-hidden">
       {/* Header/NavBar */}
-      <header className="w-full max-w-7xl bg-white rounded-xl shadow px-6 py-3 flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-2">
+      <header className="w-full max-w-7xl bg-white rounded-xl shadow px-2 md:px-6 py-3 flex flex-col md:flex-row items-center justify-between mb-6">
+        <div className="flex items-center space-x-2 mb-2 md:mb-0">
           <img src="/globe.svg" alt="Spriggly Logo" className="h-8 w-8" />
           <span className="text-2xl font-bold text-green-800">Spriggly</span>
         </div>
-        <nav className="flex-1 flex justify-center">
-          <ul className="flex space-x-8 text-green-800 font-medium">
+        <nav className="w-full md:flex-1 flex justify-center overflow-x-auto">
+          <ul className="flex space-x-4 md:space-x-8 text-green-800 font-medium text-sm md:text-base">
             <li>
               <span
                 className="font-bold border-b-2 border-green-800 pb-1 cursor-pointer"
@@ -173,32 +167,32 @@ export default function DashboardPage() {
         </nav>
       </header>
 
-      <main className="w-full max-w-7xl flex flex-col gap-6">
+      <main className="w-full max-w-7xl flex flex-col gap-6 px-2 md:px-0">
         {/* Top Row: Welcome + Profile */}
         <div className="flex flex-col md:flex-row gap-6">
           {/* Welcome Card */}
-          <div className="flex-1 rounded-2xl shadow-lg p-8 bg-gradient-to-r from-green-400 via-yellow-300 to-yellow-200 flex flex-col justify-between min-h-[160px]">
+          <div className="flex-1 rounded-2xl shadow-lg p-4 md:p-8 bg-gradient-to-r from-green-400 via-yellow-300 to-yellow-200 flex flex-col justify-between min-h-[140px] md:min-h-[160px]">
             <div>
-              <h2 className="text-2xl md:text-3xl font-extrabold text-white mb-2">Welcome back!</h2>
-              <p className="text-white font-medium mb-4">Kickstart your productivity. Sprout your first task today!</p>
+              <h2 className="text-xl md:text-3xl font-extrabold text-white mb-2">Welcome back!</h2>
+              <p className="text-white font-medium mb-4 text-sm md:text-base">Kickstart your productivity. Sprout your first task today!</p>
             </div>
-            <button className="bg-white text-green-700 font-bold px-5 py-2 rounded-lg shadow hover:bg-green-100 transition w-32">Grow</button>
+            <button className="bg-white text-green-700 font-bold px-4 md:px-5 py-2 rounded-lg shadow hover:bg-green-100 transition w-full md:w-32">Grow</button>
           </div>
           {/* Profile Card */}
-          <div className="w-full md:w-64 bg-white rounded-2xl shadow-lg flex flex-col items-center justify-center p-6">
-            <div className="w-20 h-20 bg-gray-300 rounded-xl mb-4" />
-            <div className="text-green-900 font-bold text-lg mb-1">
+          <div className="w-full md:w-64 bg-white rounded-2xl shadow-lg flex flex-col items-center justify-center p-4 md:p-6 min-w-0">
+            <div className="w-16 h-16 md:w-20 md:h-20 bg-gray-300 rounded-xl mb-4" />
+            <div className="text-green-900 font-bold text-base md:text-lg mb-1">
               {status === 'loading' ? 'Loading...' : username}
             </div>
-            <div className="text-gray-500 mb-2">{userLevel}</div>
-            <button className="bg-yellow-200 text-green-900 font-bold px-6 py-1 rounded-lg shadow">View</button>
+            <div className="text-gray-500 mb-2 text-sm md:text-base">{userLevel}</div>
+            <button className="bg-yellow-200 text-green-900 font-bold px-4 md:px-6 py-1 rounded-lg shadow w-full md:w-auto">View</button>
           </div>
         </div>
 
         {/* Daily Rewards */}
         <div>
-          <h3 className="text-xl font-bold text-green-800 mb-2">Daily Rewards</h3>
-          <div className="flex items-center space-x-4">
+          <h3 className="text-lg md:text-xl font-bold text-green-800 mb-2">Daily Rewards</h3>
+          <div className="flex items-center space-x-2 md:space-x-4 overflow-x-auto pb-2">
             {Array.from({ length: REWARD_DAYS }, (_, i) => {
               const day = i + 1;
               const state = getRewardState(day);
@@ -206,7 +200,7 @@ export default function DashboardPage() {
               const isClaimed = state === 'claimed';
               const isLocked = state === 'locked';
               return (
-                <div key={day} className="flex flex-col items-center">
+                <div key={day} className="flex flex-col items-center min-w-[80px] md:min-w-[96px]">
                   <button
                     disabled={
                       !isCurrent || claiming || (dailyRewards.claimedDays || []).includes(getTodayStr())
@@ -216,7 +210,7 @@ export default function DashboardPage() {
                         ? () => claimReward(day)
                         : undefined
                     }
-                    className={`w-24 h-24 rounded-xl shadow flex flex-col items-center justify-center transition font-bold text-xs
+                    className={`w-20 h-20 md:w-24 md:h-24 rounded-xl shadow flex flex-col items-center justify-center transition font-bold text-xs
                       ${isClaimed ? 'bg-yellow-200 text-gray-700' : ''}
                       ${isCurrent ? 'bg-yellow-200 text-gray-700 hover:scale-105 cursor-pointer' : ''}
                       ${isLocked ? 'bg-gray-200 text-gray-700 cursor-not-allowed' : ''}
@@ -226,13 +220,13 @@ export default function DashboardPage() {
                   >
                     {isClaimed || isCurrent ? (
                       <>
-                        <FaCoins className="text-yellow-500 text-3xl mb-1" />
+                        <FaCoins className="text-yellow-500 text-2xl md:text-3xl mb-1" />
                         <span>+4 Coins</span>
                         <span className="mt-1">Day {day}</span>
                       </>
                     ) : (
                       <>
-                        <FaLock className="text-yellow-500 text-3xl mb-1" />
+                        <FaLock className="text-yellow-500 text-2xl md:text-3xl mb-1" />
                         <span className="mt-1">Day {day}</span>
                       </>
                     )}
@@ -244,7 +238,7 @@ export default function DashboardPage() {
           {/* Timer below the rewards row */}
           {(dailyRewards.claimedDays || []).includes(getTodayStr()) && (
             <div className="w-full flex justify-center mt-3">
-              <span className="text-base text-red-700 font-bold bg-white bg-opacity-90 px-4 py-2 rounded shadow border border-red-300 animate-pulse">
+              <span className="text-base text-red-700 font-bold bg-white bg-opacity-90 px-2 md:px-4 py-2 rounded shadow border border-red-300 animate-pulse">
                 Next reward in: {timer || '00:00:00'}
               </span>
             </div>
@@ -253,13 +247,13 @@ export default function DashboardPage() {
 
         {/* Congrats Modal */}
         {showCongrats && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
-            <div className="bg-white rounded-2xl shadow-xl p-8 flex flex-col items-center max-w-xs w-full">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 px-2">
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 flex flex-col items-center max-w-xs w-full">
               <div className="text-3xl mb-2">🎉</div>
               <div className="text-xl font-bold text-green-800 mb-2">Congratulations!</div>
               <div className="text-green-900 mb-4">You received <span className="font-bold">+4 Coins</span> for Day {congratsDay}.</div>
               <button
-                className="bg-yellow-200 text-green-900 font-bold px-6 py-2 rounded-lg shadow hover:bg-yellow-300"
+                className="bg-yellow-200 text-green-900 font-bold px-6 py-2 rounded-lg shadow hover:bg-yellow-300 w-full"
                 onClick={() => setShowCongrats(false)}
               >
                 Close
@@ -271,32 +265,32 @@ export default function DashboardPage() {
         {/* Middle Row: Recent + Leaderboard */}
         <div className="flex flex-col md:flex-row gap-6 mt-2">
           {/* Recent Progress */}
-          <div className="flex-1 rounded-2xl shadow-lg p-8 bg-gradient-to-r from-green-400 to-yellow-200 flex items-center min-h-[160px]">
-            <div className="flex-1 flex items-center">
-              <span className="text-6xl md:text-7xl font-extrabold text-green-900 mr-6">53%</span>
+          <div className="flex-1 rounded-2xl shadow-lg p-4 md:p-8 bg-gradient-to-r from-green-400 to-yellow-200 flex items-center min-h-[120px] md:min-h-[160px]">
+            <div className="flex-1 flex flex-col md:flex-row items-center">
+              <span className="text-4xl md:text-7xl font-extrabold text-green-900 mr-0 md:mr-6 mb-2 md:mb-0">53%</span>
               <div>
-                <div className="text-green-900 font-semibold mb-2">Your Wild Cactus is almost complete.<br />Continue growing now!</div>
-                <button className="bg-yellow-200 text-green-900 font-bold px-6 py-1 rounded-lg shadow mt-2">Grow</button>
+                <div className="text-green-900 font-semibold mb-2 text-sm md:text-base">Your Wild Cactus is almost complete.<br />Continue growing now!</div>
+                <button className="bg-yellow-200 text-green-900 font-bold px-4 md:px-6 py-1 rounded-lg shadow mt-2 w-full md:w-auto">Grow</button>
               </div>
             </div>
           </div>
           {/* Leaderboard */}
-          <div className="w-full md:w-80 bg-white rounded-2xl shadow-lg flex flex-col p-6">
-            <h4 className="text-green-800 font-bold text-lg mb-4">Leaderboard</h4>
+          <div className="w-full md:w-80 bg-white rounded-2xl shadow-lg flex flex-col p-4 md:p-6 min-w-0">
+            <h4 className="text-green-800 font-bold text-base md:text-lg mb-4">Leaderboard</h4>
             {staticLeaderboardUsers.map((user, i) => (
-              <div key={user.name} className="flex items-center bg-yellow-200 rounded-xl p-3 mb-3 last:mb-0">
-                <div className="w-12 h-12 bg-gray-300 rounded-full mr-4 flex items-center justify-center font-bold text-lg">
+              <div key={user.name} className="flex items-center bg-yellow-200 rounded-xl p-2 md:p-3 mb-3 last:mb-0">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-gray-300 rounded-full mr-3 md:mr-4 flex items-center justify-center font-bold text-base md:text-lg">
                   {user.name ? user.name[0].toUpperCase() : '?'}
                 </div>
                 <div className="flex-1">
-                  <div className="font-bold text-green-900">{user.name}</div>
+                  <div className="font-bold text-green-900 text-sm md:text-base">{user.name}</div>
                   <div className="text-xs text-gray-700">Level {user.level}</div>
                   <div className="text-xs text-gray-700">XP: {user.xp} &nbsp; $:{user.money}</div>
                 </div>
               </div>
             ))}
             <button
-              className="bg-yellow-200 text-green-900 font-bold px-6 py-1 rounded-lg shadow mt-4"
+              className="bg-yellow-200 text-green-900 font-bold px-4 md:px-6 py-1 rounded-lg shadow mt-4 w-full md:w-auto"
               onClick={() => router.push('/dashboard/leaderboard')}
             >
               View all
@@ -308,35 +302,35 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2">
           {/* Shop */}
           <div
-            className="flex items-center bg-white rounded-xl shadow p-4 cursor-pointer hover:bg-gray-100 transition"
+            className="flex items-center bg-white rounded-xl shadow p-4 cursor-pointer hover:bg-gray-100 transition min-w-0"
             onClick={() => router.push('/dashboard/shop')}
           >
-            <div className="bg-gray-300 rounded-lg w-12 h-12 flex items-center justify-center mr-4 font-bold">Icon</div>
-            <div className="flex-1">
-              <div className="font-bold text-green-900 text-lg">Shop</div>
-              <div className="text-gray-700 text-sm">New boosters and seed packs are in stock. Check it out now!</div>
+            <div className="bg-gray-300 rounded-lg w-10 h-10 md:w-12 md:h-12 flex items-center justify-center mr-3 md:mr-4 font-bold">Icon</div>
+            <div className="flex-1 min-w-0">
+              <div className="font-bold text-green-900 text-base md:text-lg">Shop</div>
+              <div className="text-gray-700 text-xs md:text-sm truncate">New boosters and seed packs are in stock. Check it out now!</div>
             </div>
           </div>
           {/* Focus */}
           <div
-            className="flex items-center bg-white rounded-xl shadow p-4 cursor-pointer hover:bg-gray-100 transition"
+            className="flex items-center bg-white rounded-xl shadow p-4 cursor-pointer hover:bg-gray-100 transition min-w-0"
             onClick={() => router.push('/dashboard/Focus')}
           >
-            <div className="bg-gray-300 rounded-lg w-12 h-12 flex items-center justify-center mr-4 font-bold">Icon</div>
-            <div className="flex-1">
-              <div className="font-bold text-green-900 text-lg">Focus</div>
-              <div className="text-gray-700 text-sm">Start a productive day with focus sessions and task management.</div>
+            <div className="bg-gray-300 rounded-lg w-10 h-10 md:w-12 md:h-12 flex items-center justify-center mr-3 md:mr-4 font-bold">Icon</div>
+            <div className="flex-1 min-w-0">
+              <div className="font-bold text-green-900 text-base md:text-lg">Focus</div>
+              <div className="text-gray-700 text-xs md:text-sm truncate">Start a productive day with focus sessions and task management.</div>
             </div>
           </div>
           {/* My Plants */}
           <div
-            className="flex items-center bg-white rounded-xl shadow p-4 cursor-pointer hover:bg-gray-100 transition"
+            className="flex items-center bg-white rounded-xl shadow p-4 cursor-pointer hover:bg-gray-100 transition min-w-0"
             onClick={() => router.push('/dashboard/my_plants')}
           >
-            <div className="bg-gray-300 rounded-lg w-12 h-12 flex items-center justify-center mr-4 font-bold">Icon</div>
-            <div className="flex-1">
-              <div className="font-bold text-green-900 text-lg">My Plants</div>
-              <div className="text-gray-700 text-sm">Stay updated on tasks, plant growth, and rewards.</div>
+            <div className="bg-gray-300 rounded-lg w-10 h-10 md:w-12 md:h-12 flex items-center justify-center mr-3 md:mr-4 font-bold">Icon</div>
+            <div className="flex-1 min-w-0">
+              <div className="font-bold text-green-900 text-base md:text-lg">My Plants</div>
+              <div className="text-gray-700 text-xs md:text-sm truncate">Stay updated on tasks, plant growth, and rewards.</div>
             </div>
           </div>
         </div>
