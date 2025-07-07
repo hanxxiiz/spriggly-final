@@ -14,7 +14,7 @@ export default function LevelBar({ level, currentXp, requiredXp, plantName }: Le
   const percent = Math.round(progress * 100);
 
   return (
-    <div className="flex flex-col items-start w-[350px] -ml-10">
+<div className="w-full [@media(min-width:360px)]:w-[320px] sm:w-[350px]">
       {plantName && (
         <span className="text-lg font-extrabold text-white  ml-8">
           {plantName}

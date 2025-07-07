@@ -9,6 +9,9 @@ interface GrowInventoryPanelProps {
   items: { id: string | number; name: string; image?: string; quantity?: number }[];
   boosters?: { id: string | number; name: string; image?: string; quantity?: number }[];
   onUsePlant?: (plantId: number | string) => void;
+  onSeedPackClick?: (item: { id: string | number; name: string }) => void;
+  onBoosterClick?: (item: { id: string | number; name: string }) => void;
+  className?: string;
 }
 
 export default function GrowInventoryPanel({
@@ -17,20 +20,15 @@ export default function GrowInventoryPanel({
   items,
   boosters = [],
   onUsePlant,
+  onSeedPackClick,
+  onBoosterClick,
+  className,
 }: GrowInventoryPanelProps) {
   const [tab, setTab] = useState<'booster' | 'seedpack'>('seedpack');
   const [selectedItemId, setSelectedItemId] = useState<string | number | null>(null);
 
   const tabItems = tab === 'booster' ? boosters : items;
   const pagedItems = tabItems;
-
-  const handleItemSelect = (itemId: string | number) => {
-    if (selectedItemId === itemId) {
-      setSelectedItemId(null);
-    } else {
-      setSelectedItemId(itemId);
-    }
-  };
 
   const handleTabChange = (newTab: 'booster' | 'seedpack') => {
     setTab(newTab);
@@ -39,15 +37,13 @@ export default function GrowInventoryPanel({
 
   return (
     <div
-      className="bg-[#669524] rounded-2xl shadow-lg w-[450px] h-[600px] flex flex-col"
+      className={`bg-[#669524] rounded-2xl shadow-lg w-[450px] h-[600px] flex flex-col ${className ?? ''}`}
       style={{ minWidth: 340 }}
     >
       <div className="relative mb-6 w-full h-[70px] flex justify-center items-center flex-shrink-0">
-        {/* Background Rectangle */}
         <div className="absolute inset-0 bg-[#669524] rounded-t-2xl shadow-lg" />
-        <div className="absolute inset-0 bg-[#C2E76E] rounded-sm px-3 py-2 w-[295px] h-[40px] absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute inset-0 bg-[#C2E76E] rounded-sm px-3 py-2 w-[295px] h-[40px] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
 
-        {/* Tab Buttons */}
         <div className="relative z-10 flex space-x-2 p-1">
           <GrowInventoryTab
             label="Booster"
@@ -62,9 +58,9 @@ export default function GrowInventoryPanel({
         </div>
       </div>
 
-      <div className="ml-10 flex-1 -mt-6 overflow-hidden pr-2">
+      <div className="ml-3 sm:ml-6 md:ml-10 flex-1 -mt-6 sm:-mt-5 md:-mt-6 overflow-hidden pr-2">
         <div
-          className={`max-h-[520px] grid grid-cols-2 gap-y-5 content-start ${
+          className={`max-h-[440px] sm:max-h-[480px] md:max-h-[520px] grid grid-cols-2 gap-y-4 content-start px-2 sm:px-4 ${
             pagedItems.length > 0 ? 'overflow-y-auto custom-scrollbar' : 'overflow-hidden'
           }`}
         >
@@ -75,8 +71,13 @@ export default function GrowInventoryPanel({
               <GrowInventoryItemCard
                 key={item.id || idx}
                 item={item}
-                draggable
+                draggable={true}
                 onUsePlant={onUsePlant}
+                onClick={
+                  tab === 'seedpack'
+                    ? () => onSeedPackClick?.(item)
+                    : () => onBoosterClick?.(item)
+                }
               />
             ))
           )}
@@ -88,7 +89,7 @@ export default function GrowInventoryPanel({
           width: 16px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #F7E35B;
+          background: #f7e35b;
           border-radius: 8px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
@@ -96,7 +97,7 @@ export default function GrowInventoryPanel({
         }
         .custom-scrollbar {
           scrollbar-width: thin;
-          scrollbar-color: #F7E35B transparent;
+          scrollbar-color: #f7e35b transparent;
         }
       `}</style>
     </div>
