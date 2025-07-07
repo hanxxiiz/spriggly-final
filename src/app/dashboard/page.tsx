@@ -1,479 +1,340 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
+import { useEffect, useState } from 'react';
+import { FaLock, FaCoins } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useRef } from 'react';
-import { signOut } from 'next-auth/react';
-import { FaLeaf, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
-import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
+
+const REWARD_DAYS = 7;
+
+type DailyRewards = {
+  currentDay: number;
+  lastClaimed: string | null;
+  alreadyClaimed: boolean;
+  reset: boolean;
+  claimedDays?: string[];
+};
+
+function getNextMidnight(): Date {
+  const now = new Date();
+  const next = new Date(now);
+  next.setDate(now.getDate() + 1);
+  next.setHours(0, 0, 0, 0);
+  return next;
+}
+
+function getTimeDiffString(targetDate: Date): string {
+  const now = new Date();
+  const diff = targetDate.getTime() - now.getTime();
+  if (diff <= 0) return '00:00:00';
+  const hours = String(Math.floor(diff / (1000 * 60 * 60))).padStart(2, '0');
+  const minutes = String(Math.floor((diff / (1000 * 60)) % 60)).padStart(2, '0');
+  const seconds = String(Math.floor((diff / 1000) % 60)).padStart(2, '0');
+  return `${hours}:${minutes}:${seconds}`;
+}
+
+function getTodayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+// Remove leaderboard fetch logic and use static users
+const staticLeaderboardUsers = [
+  { name: 'Aaron', level: 5, xp: 1500, money: 200 },
+  { name: 'Hannah', level: 4, xp: 1200, money: 150 },
+  { name: 'Shayne', level: 3, xp: 1100, money: 100 },
+];
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [activeSection, setActiveSection] = useState('Home');
-  const [showProfile, setShowProfile] = useState(false);
-  const [showFocus, setShowFocus] = useState(false);
-  const [showAddTaskModal, setShowAddTaskModal] = useState(false);
-  const [showFocusTimerModal, setShowFocusTimerModal] = useState(false);
+  const username = session?.user?.name || 'Username';
+  const userLevel = 'Level #'; // Always show placeholder
 
-  // Pomodoro Timer State
-  const initialTime = 30; // 30 seconds for testing
-  const [timeLeft, setTimeLeft] = useState(initialTime);
-  const [isRunning, setIsRunning] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  // Daily rewards state
+  const [dailyRewards, setDailyRewards] = useState<DailyRewards>({ currentDay: 1, lastClaimed: null, alreadyClaimed: false, reset: false });
+  const [loadingRewards, setLoadingRewards] = useState(true);
+  const [claiming, setClaiming] = useState(false);
+  const [showCongrats, setShowCongrats] = useState(false);
+  const [congratsDay, setCongratsDay] = useState(1);
+  const [timer, setTimer] = useState('');
 
-  // Task List State
-  const [tasks, setTasks] = useState([
-    { id: 1, text: 'Sample Task 1', completed: false },
-    { id: 2, text: 'Sample Task 2', completed: false },
-  ]);
-  const [nextTaskId, setNextTaskId] = useState(3);
-
-  // Interactive Completion State
-  const [activeTaskId, setActiveTaskId] = useState<number | null>(null);
-  const [interactionType, setInteractionType] = useState<string | null>(null);
-  const [showModal, setShowModal] = useState(false);
-  const [showDrag, setShowDrag] = useState(false);
-  const [showCelebrate, setShowCelebrate] = useState(false);
-  const [showInputPrompt, setShowInputPrompt] = useState(false);
-  const [inputValue, setInputValue] = useState('');
-
-  // Plant growth stage: 0 = seedling, 1 = sprout, 2 = grown
-  const getPlantStage = () => {
-    const percent = 1 - timeLeft / initialTime;
-    if (percent < 0.33) return 0;
-    if (percent < 0.66) return 1;
-    return 2;
-  };
-  const plantStages = [
-    <span key="seedling" style={{fontSize: '3rem'}} role="img" aria-label="seedling">🌱</span>,
-    <span key="sprout" style={{fontSize: '3rem'}} role="img" aria-label="sprout">🌿</span>,
-    <span key="grown" style={{fontSize: '3rem'}} role="img" aria-label="grown">��</span>,
-  ];
-
-  // Calendar logic
-  const today = new Date();
-  const todayDate = today.getDate();
-  const todayMonth = today.getMonth();
-  const todayYear = today.getFullYear();
-  // Calendar state for navigation
-  const [displayedMonth, setDisplayedMonth] = useState(todayMonth);
-  const [displayedYear, setDisplayedYear] = useState(todayYear);
-  // Calculate number of days in displayed month
-  const daysInMonth = new Date(displayedYear, displayedMonth + 1, 0).getDate();
-  // Calculate the weekday the 1st of the month falls on (0=Sunday, 6=Saturday)
-  const firstDayOfWeek = new Date(displayedYear, displayedMonth, 1).getDay();
-
-  // Handle month navigation
-  const handlePrevMonth = () => {
-    setDisplayedMonth((prev) => {
-      if (prev === 0) {
-        setDisplayedYear((y) => y - 1);
-        return 11;
-      }
-      return prev - 1;
-    });
-  };
-  const handleNextMonth = () => {
-    setDisplayedMonth((prev) => {
-      if (prev === 11) {
-        setDisplayedYear((y) => y + 1);
-        return 0;
-      }
-      return prev + 1;
-    });
-  };
-
+  // Timer effect for next reward
   useEffect(() => {
-    if (isRunning && timeLeft > 0) {
-      intervalRef.current = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
-      }, 1000);
-    } else if (!isRunning && intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
+    let interval: NodeJS.Timeout | undefined;
+    const claimedDays = dailyRewards.claimedDays || [];
+    const claimedToday = claimedDays.includes(getTodayStr());
+    if (claimedToday) {
+      const updateTimer = () => {
+        const nextMidnight = getNextMidnight();
+        setTimer(getTimeDiffString(nextMidnight));
+      };
+      updateTimer();
+      interval = setInterval(updateTimer, 1000);
+    } else {
+      setTimer('');
     }
-    if (timeLeft === 0 && intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-      setIsRunning(false);
+    return () => interval && clearInterval(interval);
+  }, [dailyRewards.claimedDays?.length, (dailyRewards.claimedDays || []).includes(getTodayStr())]);
+
+  // Fetch daily rewards info on mount
+  useEffect(() => {
+    async function fetchRewards() {
+      setLoadingRewards(true);
+      try {
+        const res = await fetch('/api/auth/update', { method: 'GET', cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.dailyRewards) setDailyRewards(data.dailyRewards);
+        }
+      } catch (e) {}
+      setLoadingRewards(false);
     }
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
+    fetchRewards();
+  }, []);
+
+  // Claim daily reward
+  async function claimReward(day: number) {
+    setClaiming(true);
+    try {
+      const res = await fetch('/api/auth/update', { method: 'PATCH', cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.dailyRewards) {
+          setDailyRewards(data.dailyRewards);
+          setCongratsDay(day);
+          setShowCongrats(true);
+        }
       }
-    };
-  }, [isRunning, timeLeft]);
-
-  const handleStart = () => {
-    if (!isRunning && timeLeft > 0) {
-      setIsRunning(true);
+      // Refetch to ensure up-to-date state
+      const getRes = await fetch('/api/auth/update', { method: 'GET', cache: 'no-store' });
+      if (getRes.ok) {
+        const data = await getRes.json();
+        if (data.dailyRewards) setDailyRewards(data.dailyRewards);
+      }
+    } finally {
+      setClaiming(false);
     }
-  };
-  const handleReset = () => {
-    setIsRunning(false);
-    setTimeLeft(initialTime);
-  };
-  const minutes = String(Math.floor(timeLeft / 60)).padStart(2, '0');
-  const seconds = String(timeLeft % 60).padStart(2, '0');
+  }
 
-  // Handle task completion and timer reduction
-  // Randomly select an interaction type
-  const interactionTypes = ['modal', 'drag', 'celebrate', 'input'];
-  const handleCompleteClick = (id: number) => {
-    if (tasks.find((t) => t.id === id)?.completed) return;
-    setActiveTaskId(id);
-    const randomType = interactionTypes[Math.floor(Math.random() * interactionTypes.length)];
-    setInteractionType(randomType);
-    if (randomType === 'modal') setShowModal(true);
-    if (randomType === 'drag') setShowDrag(true);
-    if (randomType === 'celebrate') setShowCelebrate(true);
-    if (randomType === 'input') setShowInputPrompt(true);
-  };
+  // Debug: log dailyRewards state
+  console.log('dailyRewards', dailyRewards);
 
-  // Mark task as complete and reduce timer
-  const completeTask = (id: number) => {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === id && !task.completed
-          ? { ...task, completed: true }
-          : task
-      )
-    );
-    setTimeLeft((prev) => Math.max(0, prev - 5));
-    setActiveTaskId(null);
-    setInteractionType(null);
-    setShowModal(false);
-    setShowDrag(false);
-    setShowCelebrate(false);
-    setShowInputPrompt(false);
-    setInputValue('');
-  };
-
-  const handleAddTask = () => {
-    setTasks((prev) => [
-      ...prev,
-      { id: nextTaskId, text: `New Task ${nextTaskId}`, completed: false },
-    ]);
-    setNextTaskId((id) => id + 1);
-  };
-
-  const handleDeleteTask = (id: number) => {
-    setTasks((prev) => prev.filter((task) => task.id !== id));
-  };
-
-  // Drag-to-complete logic
-  const [dragged, setDragged] = useState(false);
-  const handleDragEnd = (event: React.DragEvent<HTMLDivElement>) => {
-    setDragged(false);
-    // If dropped in the right area, complete the task
-    const dropZone = document.getElementById('drop-zone');
-    const rect = dropZone?.getBoundingClientRect();
-    if (
-      rect &&
-      event.clientX >= rect.left &&
-      event.clientX <= rect.right &&
-      event.clientY >= rect.top &&
-      event.clientY <= rect.bottom
-    ) {
-      if (activeTaskId !== null) completeTask(activeTaskId);
-    }
-  };
-
-  // Celebrate animation (auto-complete after animation)
-  useEffect(() => {
-    if (showCelebrate && activeTaskId !== null) {
-      const timeout = setTimeout(() => {
-        completeTask(activeTaskId);
-      }, 1200);
-      return () => clearTimeout(timeout);
-    }
-  }, [showCelebrate, activeTaskId]);
-
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login');
-    }
-  }, [status, router]);
-
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl">Loading...</div>
-      </div>
-    );
+  // Determine reward state for each day using claimedDays from backend
+  function getRewardState(day: number) {
+    const claimedDays = dailyRewards.claimedDays || [];
+    if (day <= claimedDays.length) return 'claimed';
+    if (day === claimedDays.length + 1) return 'current';
+    return 'locked';
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F4F4] flex flex-col">
+    <div className="min-h-screen bg-[#F4F4F4] flex flex-col items-center py-4 overflow-x-hidden">
       {/* Header/NavBar */}
-      <header className="bg-white shadow-sm rounded-t-xl px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center space-x-2">
+      <header className="w-full max-w-7xl bg-white rounded-xl shadow px-2 md:px-6 py-3 flex flex-col md:flex-row items-center justify-between mb-6">
+        <div className="flex items-center space-x-2 mb-2 md:mb-0">
           <img src="/globe.svg" alt="Spriggly Logo" className="h-8 w-8" />
           <span className="text-2xl font-bold text-green-800">Spriggly</span>
-              </div>
-        <nav className="flex-1 flex justify-center">
-          <ul className="flex space-x-8 text-green-800 font-medium">
-            <li><Link href="/dashboard" className="text-green-800 hover:text-green-600 focus:outline-none">
+        </div>
+        <nav className="w-full md:flex-1 flex justify-center overflow-x-auto">
+          <ul className="flex space-x-4 md:space-x-8 text-green-800 font-medium text-sm md:text-base">
+            <li>
+              <span
+                className="font-bold border-b-2 border-green-800 pb-1 cursor-pointer"
+                onClick={() => router.push('/dashboard')}
+              >
                 Home
-              </Link></li>
-            <li><button className="hover:underline bg-transparent">Grow</button></li>
-            <li><Link href="/dashboard/Focus" className="text-green-800 hover:text-green-600 focus:outline-none">
-                Focus
-              </Link></li>
-            <li><Link href="/dashboard/my_plants" className="text-green-800 hover:text-green-600 focus:outline-none">
-                My Plants
-              </Link></li>
-            <li><Link href="/dashboard/shop" className="text-green-800 hover:text-green-600 focus:outline-none">
-                Shop
-              </Link></li>
-              <li><Link href="/dashboard/leaderboard" className="text-green-800 hover:text-green-600 focus:outline-none">
-                Leaderboard
-              </Link></li>
-            <li><Link href="/dashboard/notifications" className="text-green-800 hover:text-green-600 focus:outline-none">
-                Notification
-              </Link></li>
-            <li><button className="hover:underline bg-transparent">Profile</button></li>
-            <li><Link href="/dashboard/settings" className="text-green-800 hover:text-green-600 focus:outline-none">
-                Setting
-              </Link></li>
+              </span>
+            </li>
+            <li>
+              <span className="hover:underline cursor-pointer" onClick={() => router.push('/dashboard/grow')}>Grow</span>
+            </li>
+            <li>
+              <span className="hover:underline cursor-pointer" onClick={() => router.push('/dashboard/my_plants')}>My Plants</span>
+            </li>
+            <li>
+              <span className="hover:underline cursor-pointer" onClick={() => router.push('/dashboard/shop')}>Shop</span>
+            </li>
+            <li>
+              <span className="hover:underline cursor-pointer" onClick={() => router.push('/dashboard/notifications')}>Notifications</span>
+            </li>
+            <li>
+              <span className="hover:underline cursor-pointer" onClick={() => router.push('/dashboard/profile')}>Profile</span>
+            </li>
+            <li>
+              <span className="hover:underline cursor-pointer" onClick={() => router.push('/dashboard/settings')}>Settings</span>
+            </li>
           </ul>
         </nav>
       </header>
 
-      {/* Main Content */}
-      {showProfile ? (
-        <main className="flex-1 flex flex-col items-center justify-start bg-[#F4F4F4] min-h-screen py-8">
-          <div className="w-full max-w-5xl">
-            <div className="rounded-2xl shadow-lg mb-10 p-12 bg-gradient-to-r from-green-400 via-yellow-300 to-yellow-200 flex items-end min-h-[140px]">
-              <span className="text-2xl md:text-3xl font-extrabold text-white">@{session?.user?.name || 'username'}</span>
+      <main className="w-full max-w-7xl flex flex-col gap-6 px-2 md:px-0">
+        {/* Top Row: Welcome + Profile */}
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Welcome Card */}
+          <div className="flex-1 rounded-2xl shadow-lg p-4 md:p-8 bg-gradient-to-r from-green-400 via-yellow-300 to-yellow-200 flex flex-col justify-between min-h-[140px] md:min-h-[160px]">
+            <div>
+              <h2 className="text-xl md:text-3xl font-extrabold text-white mb-2">Welcome back!</h2>
+              <p className="text-white font-medium mb-4 text-sm md:text-base">Kickstart your productivity. Sprout your first task today!</p>
             </div>
-            <div className="flex flex-wrap gap-8 justify-center">
-              {['Focus Time', 'Tasks Completed', 'Plants', 'Highest Streak', 'Total Coins Earned'].map(label => (
-                <div key={label} className="w-56 h-48 rounded-xl bg-yellow-200 shadow-md flex items-center justify-center">
-                  <span className="text-xl font-bold text-white drop-shadow-md text-center">{label}</span>
-              </div>        
-              ))}
-            </div>
-            <button className="text-green-800 hover:text-green-600 focus:outline-none">Profile</button>
-              <Link href="/dashboard/settings" className="text-green-800 hover:text-green-600 focus:outline-none">
-                Setting
-              </Link>
+            <button className="bg-white text-green-700 font-bold px-4 md:px-5 py-2 rounded-lg shadow hover:bg-green-100 transition w-full md:w-32">Grow</button>
           </div>
-        </main>
-      ) : showFocus ? (
-        <main className="flex-1 flex flex-col bg-[#F4F4F4] min-h-screen py-8 px-8 relative">
-          <h1 className="text-3xl font-extrabold text-green-800 mb-8">Grow</h1>
-          <div className="flex flex-col md:flex-row gap-8 justify-center items-start">
-            {/* Focus Timer Card */}
-            <div className="bg-[#F6FFB0] rounded-2xl shadow-lg p-8 flex-1 min-w-[320px] max-w-[420px] flex flex-col items-center" style={{ minHeight: '420px' }}>
-              <h2 className="text-2xl font-bold text-[#B6C24B] mb-8">Focus Timer</h2>
-              <div className="flex items-center justify-center w-full mb-8">
-                <div className="rounded-full border-[12px] border-[#B6C24B] w-60 h-60 flex items-center justify-center bg-[#F6FFB0]">
-                  <span className="text-4xl font-bold text-[#B6C24B]">0:00</span>
+          {/* Profile Card */}
+          <div className="w-full md:w-64 bg-white rounded-2xl shadow-lg flex flex-col items-center justify-center p-4 md:p-6 min-w-0">
+            <div className="w-16 h-16 md:w-20 md:h-20 bg-gray-300 rounded-xl mb-4" />
+            <div className="text-green-900 font-bold text-base md:text-lg mb-1">
+              {status === 'loading' ? 'Loading...' : username}
+            </div>
+            <div className="text-gray-500 mb-2 text-sm md:text-base">{userLevel}</div>
+            <button className="bg-yellow-200 text-green-900 font-bold px-4 md:px-6 py-1 rounded-lg shadow w-full md:w-auto">View</button>
+          </div>
+        </div>
+
+        {/* Daily Rewards */}
+        <div>
+          <h3 className="text-lg md:text-xl font-bold text-green-800 mb-2">Daily Rewards</h3>
+          <div className="flex items-center space-x-2 md:space-x-4 overflow-x-auto pb-2">
+            {Array.from({ length: REWARD_DAYS }, (_, i) => {
+              const day = i + 1;
+              const state = getRewardState(day);
+              const isCurrent = state === 'current';
+              const isClaimed = state === 'claimed';
+              const isLocked = state === 'locked';
+              return (
+                <div key={day} className="flex flex-col items-center min-w-[80px] md:min-w-[96px]">
+                  <button
+                    disabled={
+                      !isCurrent || claiming || (dailyRewards.claimedDays || []).includes(getTodayStr())
+                    }
+                    onClick={
+                      isCurrent && !(dailyRewards.claimedDays || []).includes(getTodayStr())
+                        ? () => claimReward(day)
+                        : undefined
+                    }
+                    className={`w-20 h-20 md:w-24 md:h-24 rounded-xl shadow flex flex-col items-center justify-center transition font-bold text-xs
+                      ${isClaimed ? 'bg-yellow-200 text-gray-700' : ''}
+                      ${isCurrent ? 'bg-yellow-200 text-gray-700 hover:scale-105 cursor-pointer' : ''}
+                      ${isLocked ? 'bg-gray-200 text-gray-700 cursor-not-allowed' : ''}
+                      ${(dailyRewards.claimedDays || []).includes(getTodayStr()) ? 'opacity-60 cursor-not-allowed' : ''}
+                    `}
+                    style={{ outline: isCurrent ? '2px solid #B6C24B' : undefined }}
+                  >
+                    {isClaimed || isCurrent ? (
+                      <>
+                        <FaCoins className="text-yellow-500 text-2xl md:text-3xl mb-1" />
+                        <span>+4 Coins</span>
+                        <span className="mt-1">Day {day}</span>
+                      </>
+                    ) : (
+                      <>
+                        <FaLock className="text-yellow-500 text-2xl md:text-3xl mb-1" />
+                        <span className="mt-1">Day {day}</span>
+                      </>
+                    )}
+                  </button>
                 </div>
-              </div>
-              <button className="mt-4 bg-[#B6C24B] text-white font-bold px-12 py-2 rounded-lg shadow" style={{ width: '60%' }} onClick={() => setShowFocusTimerModal(true)}>Start</button>
-            </div>
-            {/* Tasks Card */}
-            <div className="bg-[#F6FFB0] rounded-2xl shadow-lg p-8 flex-1 min-w-[320px] max-w-[420px] flex flex-col" style={{ minHeight: '420px' }}>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-[#B6C24B]">Tasks</h2>
-                <button className="bg-[#B6C24B] text-white font-bold px-4 py-1 rounded" onClick={() => setShowAddTaskModal(true)}>+ Add</button>
-              </div>
-              <div className="flex space-x-4 mb-6">
-                <button className="bg-[#C7C97A] text-white font-bold px-4 py-1 rounded">Today</button>
-                <button className="bg-[#C7C97A] text-white font-bold px-4 py-1 rounded">Upcoming</button>
-                <button className="bg-[#C7C97A] text-white font-bold px-4 py-1 rounded">Overdue</button>
-              </div>
-              <div className="flex flex-col gap-4 flex-1">
-                {[0,1,2,3].map(i => (
-                  <div key={i} className="bg-[#F9FFCB] rounded-md h-12 shadow" />
-                ))}
-              </div>
-            </div>
+              );
+            })}
           </div>
-          {/* Add Task Modal */}
-          {showAddTaskModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
-              <div className="bg-[#F6FFB0] rounded-2xl shadow-xl p-10 w-full max-w-xl flex flex-col items-center border-2 border-[#E3E7A1]">
-                <h2 className="text-3xl font-bold text-[#B6C24B] mb-8">Add Task</h2>
-                <form className="w-full flex flex-col gap-6">
-                  <div>
-                    <label className="block text-lg font-semibold text-[#B6C24B] mb-1">Task Name</label>
-                    <input type="text" className="w-full rounded-md border border-[#B6C24B] px-4 py-2 bg-[#F9FFCB] text-[#B6C24B] font-semibold focus:outline-none" />
-            </div>
-                  <div>
-                    <label className="block text-lg font-semibold text-[#B6C24B] mb-1">Description</label>
-                    <textarea className="w-full rounded-md border border-[#B6C24B] px-4 py-2 bg-[#F9FFCB] text-[#B6C24B] font-semibold focus:outline-none" rows={3} />
-          </div>
-                  <div className="flex flex-col md:flex-row gap-4">
-                    <div className="flex-1">
-                      <label className="block text-lg font-semibold text-[#B6C24B] mb-1">Priority Level</label>
-                      <select className="w-full rounded-md border border-[#B6C24B] px-4 py-2 bg-[#E3E7A1] text-[#B6C24B] font-semibold focus:outline-none">
-                        <option>High</option>
-                        <option>Medium</option>
-                        <option>Low</option>
-                      </select>
-                      </div>
-                    <div className="flex-1">
-                      <label className="block text-lg font-semibold text-[#B6C24B] mb-1">Due Date</label>
-                      <input type="date" className="w-full rounded-md border border-[#B6C24B] px-4 py-2 bg-[#F9FFCB] text-[#B6C24B] font-semibold focus:outline-none" />
-                    </div>
-                  </div>
-                  <button type="button" className="mt-4 bg-[#B6C24B] text-white font-bold px-10 py-2 rounded-lg mx-auto" onClick={() => setShowAddTaskModal(false)}>Add</button>
-                </form>
-              </div>
+          {/* Timer below the rewards row */}
+          {(dailyRewards.claimedDays || []).includes(getTodayStr()) && (
+            <div className="w-full flex justify-center mt-3">
+              <span className="text-base text-red-700 font-bold bg-white bg-opacity-90 px-2 md:px-4 py-2 rounded shadow border border-red-300 animate-pulse">
+                Next reward in: {timer || '00:00:00'}
+              </span>
             </div>
           )}
-          {/* Focus Timer Modal */}
-          {showFocusTimerModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
-              <div className="bg-[#F6FFB0] rounded-2xl shadow-xl p-8 w-full max-w-md flex flex-col items-center border-2 border-[#E3E7A1]">
-                <h2 className="text-3xl font-bold text-[#B6C24B] mb-8">Focus Timer</h2>
-                <form className="w-full flex flex-col gap-6 items-center">
-                  <div className="flex w-full items-center justify-between mb-2">
-                    <label className="text-lg font-semibold text-[#B6C24B]">Session Duration</label>
-                    <select className="rounded-md border border-[#B6C24B] px-4 py-1 bg-[#E3E7A1] text-[#B6C24B] font-semibold focus:outline-none">
-                      <option>Custom</option>
-                      <option>25:00</option>
-                      <option>50:00</option>
-                    </select>
-                  </div>
-                  <div className="flex w-full items-center justify-between mb-2">
-                    <label className="text-lg font-semibold text-[#B6C24B]">Enter custom focus time</label>
-                    <input type="text" className="rounded-md border border-[#B6C24B] px-4 py-1 bg-[#F9FFCB] text-[#B6C24B] font-semibold focus:outline-none w-32" />
-                  </div>
-                  <button type="button" className="mt-4 bg-[#B6C24B] text-white font-bold px-10 py-2 rounded-lg mx-auto" onClick={() => setShowFocusTimerModal(false)}>Add</button>
-                </form>
-                          </div>
-                        </div>
-          )}
-        </main>
-      ) : (
-        <main className="flex-1 flex flex-col md:flex-row bg-[#F4F4F4]">
-          {/* Main Left Content */}
-          <section className="flex-1 p-8">
-            {/* Welcome Card */}
-            <div className="rounded-2xl shadow-lg mb-8 p-8 bg-gradient-to-r from-green-400 via-yellow-300 to-yellow-200">
-              <h2 className="text-2xl md:text-3xl font-extrabold text-white mb-2">
-                {status === 'authenticated' && session?.user?.name ? `Welcome back, ${session.user.name}!` : 'Welcome back!'}
-              </h2>
-              <p className="text-white font-medium mb-4">Water your goals. And maybe your real plants too!</p>
-              <button className="bg-white text-green-700 font-bold px-5 py-2 rounded-lg shadow hover:bg-green-100 transition">Start now</button>
-                          </div>
+        </div>
 
-            {/* Daily Rewards */}
-            <h3 className="text-xl font-bold text-green-800 mb-4">Daily Rewards</h3>
-            <div className="flex items-center space-x-4 mb-6">
-              <button className="p-2 bg-[#F4F9E7] rounded-full shadow"><FaChevronLeft /></button>
-              <div className="flex space-x-4">
-                {[0,1,2,3,4].map(i => (
-                  <div key={i} className="w-20 h-20 rounded-xl bg-yellow-200 shadow" />
-                ))}
-              </div>
-              <button className="p-2 bg-[#F4F9E7] rounded-full shadow"><FaChevronRight /></button>
+        {/* Congrats Modal */}
+        {showCongrats && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 px-2">
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 flex flex-col items-center max-w-xs w-full">
+              <div className="text-3xl mb-2">🎉</div>
+              <div className="text-xl font-bold text-green-800 mb-2">Congratulations!</div>
+              <div className="text-green-900 mb-4">You received <span className="font-bold">+4 Coins</span> for Day {congratsDay}.</div>
+              <button
+                className="bg-yellow-200 text-green-900 font-bold px-6 py-2 rounded-lg shadow hover:bg-yellow-300 w-full"
+                onClick={() => setShowCongrats(false)}
+              >
+                Close
+              </button>
             </div>
-            <div className="grid grid-cols-2 gap-6 mb-10 max-w-2xl">
-              <div className="col-span-1 row-span-2 w-full h-40 rounded-xl bg-yellow-200 shadow" />
-              <div className="col-span-1 w-full h-20 rounded-xl bg-yellow-200 shadow" />
-              <div className="col-span-1 w-full h-20 rounded-xl bg-yellow-200 shadow" />
-            </div>
-
-            {/* Explore Section */}
-            <h3 className="text-xl font-bold text-green-800 mb-4">Explore</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* My Plants */}
-              <div className="flex items-center bg-gradient-to-r from-green-400 to-green-200 rounded-xl shadow p-4">
-                <div className="bg-white rounded-lg w-12 h-12 flex items-center justify-center mr-4 font-bold">icon</div>
-                <div className="flex-1">
-                  <div className="font-bold text-white text-lg">My Plants</div>
-                  <div className="text-white text-sm">View all the plants you have grown and collected!</div>
-                </div>
-                <div className="ml-4 text-white font-bold text-2xl">&gt;</div>
-              </div>
-              {/* Grow */}
-              <div className="flex items-center bg-gradient-to-r from-green-400 to-green-200 rounded-xl shadow p-4">
-                <div className="bg-white rounded-lg w-12 h-12 flex items-center justify-center mr-4 font-bold">icon</div>
-                <div className="flex-1">
-                  <div className="font-bold text-white text-lg">Grow</div>
-                  <div className="text-white text-sm">View all the plants you have grown and collected!</div>
-                </div>
-                <div className="ml-4 text-white font-bold text-2xl">&gt;</div>
-              </div>
-              {/* Analytics */}
-              <div className="flex items-center bg-gradient-to-r from-green-400 to-green-200 rounded-xl shadow p-4">
-                <div className="bg-white rounded-lg w-12 h-12 flex items-center justify-center mr-4 font-bold">icon</div>
-                <div className="flex-1">
-                  <div className="font-bold text-white text-lg">Analytics</div>
-                  <div className="text-white text-sm">See your focus time and productivity stats.</div>
-                </div>
-                <div className="ml-4 text-white font-bold text-2xl">&gt;</div>
-                  </div>
-              {/* Notifications */}
-              <div className="flex items-center bg-gradient-to-r from-green-400 to-green-200 rounded-xl shadow p-4">
-                <div className="bg-white rounded-lg w-12 h-12 flex items-center justify-center mr-4 font-bold">icon</div>
-                <div className="flex-1">
-                  <div className="font-bold text-white text-lg">Notifications</div>
-                  <div className="text-white text-sm">Stay updated on tasks, plant growth, and rewards.</div>
-                </div>
-                <div className="ml-4 text-white font-bold text-2xl">&gt;</div>
-              </div>
-            </div>
-          </section>
-
-          {/* Sidebar */}
-          <aside className="w-full md:w-80 bg-white rounded-l-2xl shadow-lg p-6 flex flex-col border-l border-gray-200">
-            {/* Calendar */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-bold text-sm text-black">{new Date(displayedYear, displayedMonth).toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
-                <div className="flex space-x-2">
-                  <button className="p-1 rounded hover:bg-gray-100"><FaChevronLeft size={14} /></button>
-                  <button className="p-1 rounded hover:bg-gray-100"><FaChevronRight size={14} /></button>
-                </div>
-              </div>
-              {/* Calendar grid (static for now) */}
-              <div className="grid grid-cols-7 gap-1 text-xs text-center text-black mb-1">
-                {["SUN","MON","TUE","WED","THU","FRI","SAT"].map(d => <div key={d}>{d}</div>)}
-                    </div>
-              <div className="grid grid-cols-7 gap-1 text-center">
-                {/* Add empty divs for days before the 1st of the month */}
-                {Array.from({length: firstDayOfWeek}).map((_, i) => (
-                  <div key={`empty-${i}`}></div>
-                ))}
-                {Array.from({length: daysInMonth}, (_, i) => i+1).map(day => {
-                  const isToday = todayDate === day && todayMonth === displayedMonth && todayYear === displayedYear;
-                  return (
-                    <div
-                      key={day}
-                      className={`py-1 rounded-full cursor-pointer text-black ${isToday ? 'bg-blue-600 text-white font-bold' : 'hover:bg-green-100'}`}
-                    >
-                      {day}
-                    </div>
-                  );
-                })}
-                    </div>
-              <div className="flex items-center justify-between mt-2">
-                <span className="text-xs text-gray-500">Ends</span>
-                <input type="time" value="08:00" className="border rounded px-2 py-1 text-xs w-24" readOnly />
-                    </div>
-                    </div>
-            {/* Incoming Tasks */}
-            <div className="mt-4">
-              <h4 className="font-bold text-gray-700 mb-2 text-sm">Incoming Tasks</h4>
-              <div className="space-y-2">
-                <div className="h-6 rounded bg-red-500" />
-                <div className="h-6 rounded bg-yellow-200" />
-                <div className="h-6 rounded bg-yellow-200" />
-                <div className="h-6 rounded bg-yellow-200" />
-              </div>
-            </div>
-          </aside>
-        </main>
+          </div>
         )}
+
+        {/* Middle Row: Recent + Leaderboard */}
+        <div className="flex flex-col md:flex-row gap-6 mt-2">
+          {/* Recent Progress */}
+          <div className="flex-1 rounded-2xl shadow-lg p-4 md:p-8 bg-gradient-to-r from-green-400 to-yellow-200 flex items-center min-h-[120px] md:min-h-[160px]">
+            <div className="flex-1 flex flex-col md:flex-row items-center">
+              <span className="text-4xl md:text-7xl font-extrabold text-green-900 mr-0 md:mr-6 mb-2 md:mb-0">53%</span>
+              <div>
+                <div className="text-green-900 font-semibold mb-2 text-sm md:text-base">Your Wild Cactus is almost complete.<br />Continue growing now!</div>
+                <button className="bg-yellow-200 text-green-900 font-bold px-4 md:px-6 py-1 rounded-lg shadow mt-2 w-full md:w-auto">Grow</button>
+              </div>
+            </div>
+          </div>
+          {/* Leaderboard */}
+          <div className="w-full md:w-80 bg-white rounded-2xl shadow-lg flex flex-col p-4 md:p-6 min-w-0">
+            <h4 className="text-green-800 font-bold text-base md:text-lg mb-4">Leaderboard</h4>
+            {staticLeaderboardUsers.map((user, i) => (
+              <div key={user.name} className="flex items-center bg-yellow-200 rounded-xl p-2 md:p-3 mb-3 last:mb-0">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-gray-300 rounded-full mr-3 md:mr-4 flex items-center justify-center font-bold text-base md:text-lg">
+                  {user.name ? user.name[0].toUpperCase() : '?'}
+                </div>
+                <div className="flex-1">
+                  <div className="font-bold text-green-900 text-sm md:text-base">{user.name}</div>
+                  <div className="text-xs text-gray-700">Level {user.level}</div>
+                  <div className="text-xs text-gray-700">XP: {user.xp} &nbsp; $:{user.money}</div>
+                </div>
+              </div>
+            ))}
+            <button
+              className="bg-yellow-200 text-green-900 font-bold px-4 md:px-6 py-1 rounded-lg shadow mt-4 w-full md:w-auto"
+              onClick={() => router.push('/dashboard/leaderboard')}
+            >
+              View all
+            </button>
+          </div>
+        </div>
+
+        {/* Explore Section */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2">
+          {/* Shop */}
+          <div
+            className="flex items-center bg-white rounded-xl shadow p-4 cursor-pointer hover:bg-gray-100 transition min-w-0"
+            onClick={() => router.push('/dashboard/shop')}
+          >
+            <div className="bg-gray-300 rounded-lg w-10 h-10 md:w-12 md:h-12 flex items-center justify-center mr-3 md:mr-4 font-bold">Icon</div>
+            <div className="flex-1 min-w-0">
+              <div className="font-bold text-green-900 text-base md:text-lg">Shop</div>
+              <div className="text-gray-700 text-xs md:text-sm truncate">New boosters and seed packs are in stock. Check it out now!</div>
+            </div>
+          </div>
+          {/* Focus */}
+          <div
+            className="flex items-center bg-white rounded-xl shadow p-4 cursor-pointer hover:bg-gray-100 transition min-w-0"
+            onClick={() => router.push('/dashboard/Focus')}
+          >
+            <div className="bg-gray-300 rounded-lg w-10 h-10 md:w-12 md:h-12 flex items-center justify-center mr-3 md:mr-4 font-bold">Icon</div>
+            <div className="flex-1 min-w-0">
+              <div className="font-bold text-green-900 text-base md:text-lg">Focus</div>
+              <div className="text-gray-700 text-xs md:text-sm truncate">Start a productive day with focus sessions and task management.</div>
+            </div>
+          </div>
+          {/* My Plants */}
+          <div
+            className="flex items-center bg-white rounded-xl shadow p-4 cursor-pointer hover:bg-gray-100 transition min-w-0"
+            onClick={() => router.push('/dashboard/my_plants')}
+          >
+            <div className="bg-gray-300 rounded-lg w-10 h-10 md:w-12 md:h-12 flex items-center justify-center mr-3 md:mr-4 font-bold">Icon</div>
+            <div className="flex-1 min-w-0">
+              <div className="font-bold text-green-900 text-base md:text-lg">My Plants</div>
+              <div className="text-gray-700 text-xs md:text-sm truncate">Stay updated on tasks, plant growth, and rewards.</div>
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

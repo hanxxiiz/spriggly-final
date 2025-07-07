@@ -6,6 +6,11 @@ interface IUser extends Document {
   email: string;
   password: string;
   createdAt: Date;
+  dailyRewards?: {
+    currentDay: number;
+    lastClaimed: Date | null;
+    claimedDays: string[];
+  };
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -31,6 +36,11 @@ const userSchema = new mongoose.Schema<IUser>({
   createdAt: {
     type: Date,
     default: Date.now,
+  },
+  dailyRewards: {
+    currentDay: { type: Number, default: 1 },
+    lastClaimed: { type: Date, default: null },
+    claimedDays: { type: [String], default: [] },
   },
 });
 
