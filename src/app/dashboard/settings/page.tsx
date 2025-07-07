@@ -178,17 +178,6 @@ export default function SettingsPage() {
               />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-[#6b942e] font-medium text-base">Email</label>
-              <input
-                type="email"
-                className="border border-[#6b942e] rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b6d36b] transition w-full text-base"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-                placeholder="Enter your email"
-              />
-            </div>
-            <div className="flex flex-col gap-1">
               <label className="text-[#6b942e] font-medium text-base">Current Password</label>
               <input
                 type="password"
