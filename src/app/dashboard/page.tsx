@@ -8,6 +8,7 @@ import { FaLeaf, FaChevronLeft, FaChevronRight, FaLock, FaCoins, FaUserCircle } 
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GiWateringCan, GiGrowth, GiSprout, GiLaurelsTrophy } from 'react-icons/gi';
+import Navbar from '@/components/NavigationBar';
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -321,13 +322,13 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-[#F4F4F4] flex flex-col">
       {/* Header/NavBar */}
-      <header className="bg-white shadow-sm rounded-t-xl px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center space-x-2">
+      <header className="bg-white shadow-sm rounded-t-xl px-2 md:px-6 py-3 flex flex-wrap items-center justify-between w-full">
+        <div className="flex items-center space-x-2 flex-shrink-0">
           <img src="/globe.svg" alt="Spriggly Logo" className="h-8 w-8" />
           <span className="text-2xl font-bold text-green-800">Spriggly</span>
         </div>
-        <nav className="flex-1 flex justify-center">
-          <ul className="flex space-x-8 text-green-800 font-medium">
+        <nav className="flex-1 flex justify-center w-full md:w-auto mt-2 md:mt-0">
+          <ul className="flex flex-wrap justify-center space-x-4 md:space-x-8 text-green-800 font-medium text-sm md:text-base">
             <li><Link href="/dashboard" className="hover:font-bold">Home</Link></li>
             <li><Link href="/dashboard" className="font-bold underline underline-offset-4">Grow</Link></li>
             <li><Link href="/dashboard/my_plants">My Plants</Link></li>
@@ -340,37 +341,37 @@ export default function DashboardPage() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col md:flex-row bg-[#F4F4F4] p-6 gap-6">
+      <main className="flex-1 flex flex-col md:flex-row bg-[#F4F4F4] p-2 md:p-6 gap-6 w-full max-w-full">
         {/* Left/Main Section */}
-        <section className="flex-1 flex flex-col gap-6">
+        <section className="flex-1 flex flex-col gap-6 min-w-0">
           {/* Home Title */}
-          <h1 className="text-3xl font-extrabold text-green-800 mb-2">Home</h1>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-green-800 mb-2">Home</h1>
 
           {/* Welcome Card */}
-          <div className="rounded-2xl shadow-lg p-8 bg-gradient-to-br from-green-400 via-yellow-300 to-yellow-200 flex flex-col gap-2 mb-2">
-            <h2 className="text-2xl font-extrabold text-white mb-2">Welcome back!</h2>
-            <p className="text-white font-medium mb-4">Kickstart your productivity. Sprout your first task today!</p>
+          <div className="rounded-2xl shadow-lg p-4 md:p-8 bg-gradient-to-br from-green-400 via-yellow-300 to-yellow-200 flex flex-col gap-2 mb-2">
+            <h2 className="text-xl md:text-2xl font-extrabold text-white mb-2">Welcome back!</h2>
+            <p className="text-white font-medium mb-4 text-sm md:text-base">Kickstart your productivity. Sprout your first task today!</p>
             <button className="bg-white text-green-700 font-bold px-5 py-2 rounded-lg shadow hover:bg-green-100 transition w-32">Grow</button>
           </div>
 
           {/* Daily Rewards */}
           <div>
-            <h3 className="text-xl font-bold text-green-800 mb-2">Daily Rewards</h3>
+            <h3 className="text-lg md:text-xl font-bold text-green-800 mb-2">Daily Rewards</h3>
             {rewardsLoading ? (
               <div className="text-gray-500 text-sm py-4">Loading rewards...</div>
             ) : rewardsError ? (
               <div className="text-red-500 text-sm py-4">{rewardsError}</div>
             ) : (
-              <div className="flex items-center gap-4 mb-2">
+              <div className="flex md:flex-wrap flex-nowrap overflow-x-auto md:overflow-visible gap-2 md:gap-4 mb-2 scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
                 {dailyRewards.map((reward, i) => {
                   const isClaimed = i < claimedDay;
                   const isCurrent = i === claimedDay;
                   const todayStr = getTodayString();
                   const alreadyClaimedToday = isCurrent && lastClaimDate === todayStr;
                   return (
-                    <div key={i} className="relative flex flex-col items-center">
+                    <div key={i} className="relative flex flex-col items-center flex-shrink-0 w-24 md:w-1/6 min-w-[90px] max-w-[110px]">
                       <button
-                        className={`flex flex-col items-center w-20 h-20 rounded-xl shadow transition-all duration-200 border-2 ${isClaimed ? 'bg-yellow-100 border-yellow-300 opacity-60' : isCurrent ? 'bg-yellow-200 border-yellow-400' : 'bg-gray-400 border-gray-400'} ${isCurrent ? 'hover:scale-105 cursor-pointer' : 'cursor-not-allowed'}`}
+                        className={`flex flex-col items-center w-full h-20 rounded-xl shadow transition-all duration-200 border-2 ${isClaimed ? 'bg-yellow-100 border-yellow-300 opacity-60' : isCurrent ? 'bg-yellow-200 border-yellow-400' : 'bg-gray-400 border-gray-400'} ${isCurrent ? 'hover:scale-105 cursor-pointer' : 'cursor-not-allowed'}`}
                         disabled={!isCurrent}
                         onClick={() => handleClaimReward(i)}
                         aria-label={reward.label}
@@ -415,13 +416,13 @@ export default function DashboardPage() {
 
           {/* Recent Progress */}
           <div>
-            <h3 className="text-xl font-bold text-green-800 mb-2">Recent</h3>
-            <div className="flex gap-6">
+            <h3 className="text-lg md:text-xl font-bold text-green-800 mb-2">Recent</h3>
+            <div className="flex flex-col md:flex-row gap-6">
               {/* Progress Card */}
-              <div className="flex-1 rounded-2xl shadow-lg bg-gradient-to-br from-green-200 via-green-100 to-yellow-100 flex items-center p-8 min-h-[140px]">
-                <span className="text-6xl font-extrabold text-green-800 mr-8">53%</span>
+              <div className="flex-1 rounded-2xl shadow-lg bg-gradient-to-br from-green-200 via-green-100 to-yellow-100 flex items-center p-4 md:p-8 min-h-[140px]">
+                <span className="text-4xl md:text-6xl font-extrabold text-green-800 mr-4 md:mr-8">53%</span>
                 <div className="flex-1 flex flex-col justify-center">
-                  <span className="text-green-800 font-medium mb-2">Your Wild Cactus is almost complete. Continue growing now!</span>
+                  <span className="text-green-800 font-medium mb-2 text-sm md:text-base">Your Wild Cactus is almost complete. Continue growing now!</span>
                   <button className="bg-yellow-200 text-green-800 font-bold px-5 py-2 rounded-lg shadow hover:bg-yellow-100 transition w-32">Grow</button>
                 </div>
               </div>
@@ -429,21 +430,21 @@ export default function DashboardPage() {
           </div>
 
           {/* Bottom Cards: Shop, Focus, My Plants */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6 mt-2">
             {/* Shop */}
-            <Link href="/dashboard/shop" className="rounded-xl bg-green-200 shadow flex flex-col items-center justify-center p-4 min-h-[120px] transition hover:scale-105 cursor-pointer">
+            <Link href="/dashboard/shop" className="rounded-xl bg-green-200 shadow flex flex-col items-center justify-center p-4 min-h-[120px] transition hover:scale-105 cursor-pointer w-full">
               <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center mb-2">icon</div>
               <div className="font-bold text-green-800">Shop</div>
               <div className="text-green-800 text-xs text-center">New boosters and seed packs are in stock. Check it out now!</div>
             </Link>
             {/* Focus */}
-            <Link href="/dashboard/Focus" className="rounded-xl bg-green-200 shadow flex flex-col items-center justify-center p-4 min-h-[120px] transition hover:scale-105 cursor-pointer">
+            <Link href="/dashboard/Focus" className="rounded-xl bg-green-200 shadow flex flex-col items-center justify-center p-4 min-h-[120px] transition hover:scale-105 cursor-pointer w-full">
               <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center mb-2">icon</div>
               <div className="font-bold text-green-800">Focus</div>
               <div className="text-green-800 text-xs text-center">Start a productive day with focus sessions and task management.</div>
             </Link>
             {/* My Plants */}
-            <Link href="/dashboard/my_plants" className="rounded-xl bg-green-200 shadow flex flex-col items-center justify-center p-4 min-h-[120px] transition hover:scale-105 cursor-pointer">
+            <Link href="/dashboard/my_plants" className="rounded-xl bg-green-200 shadow flex flex-col items-center justify-center p-4 min-h-[120px] transition hover:scale-105 cursor-pointer w-full">
               <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center mb-2">icon</div>
               <div className="font-bold text-green-800">My Plants</div>
               <div className="text-green-800 text-xs text-center">Stay updated on tasks, plant growth, and rewards.</div>
@@ -452,9 +453,9 @@ export default function DashboardPage() {
         </section>
 
         {/* Sidebar: Profile Card + Leaderboard */}
-        <aside className="w-full md:w-80 bg-white rounded-2xl shadow-lg p-6 flex flex-col gap-6 border-l border-gray-200 mt-8 md:mt-0">
+        <aside className="w-full md:w-80 bg-white rounded-2xl shadow-lg p-4 md:p-6 flex flex-col gap-6 border-l border-gray-200 mt-8 md:mt-0 min-w-0">
           {/* Profile Card */}
-          <div className="w-full rounded-2xl shadow bg-white flex flex-col items-center justify-center p-6 mb-2">
+          <div className="w-full rounded-2xl shadow bg-white flex flex-col items-center justify-center p-4 md:p-6 mb-2">
             <div className="w-16 h-10 rounded-full bg-gray-200 flex items-center justify-center mb-2">
               <span className="w-10 h-10 bg-gray-400 rounded-full flex items-center justify-center">
                 <svg className="w-8 h-8 text-white mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="9" r="3.5" fill="#b0b7be" /><path d="M12 14c-4 0-6 2-6 3.5V19h12v-1.5c0-1.5-2-3.5-6-3.5z" fill="#b0b7be" /></svg>
@@ -465,7 +466,7 @@ export default function DashboardPage() {
             <button className="bg-yellow-200 text-green-800 font-bold px-6 py-1 rounded shadow hover:bg-yellow-100 transition text-sm">View</button>
           </div>
           {/* Leaderboard */}
-          <h3 className="text-xl font-bold text-green-800 mb-4">Leaderboard</h3>
+          <h3 className="text-lg md:text-xl font-bold text-green-800 mb-4">Leaderboard</h3>
           <LeaderboardSidebar />
         </aside>
       </main>
