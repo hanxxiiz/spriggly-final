@@ -55,102 +55,102 @@ const ProfilePage = () => {
           </div>
 
           {/* Profile Banner */}
-          <div className="mx-6 mb-8">
-            <div className="relative rounded-2xl overflow-hidden h-60 w-full">
+          <div className="mx-2 sm:mx-4 md:mx-6 mb-4 sm:mb-6 md:mb-8">
+            <div className="relative rounded-2xl overflow-hidden h-32 sm:h-40 md:h-48 lg:h-60 w-full">
               <div
                 className="absolute inset-0 bg-gradient-to-br from-lime-300 to-green-400 z-0"
                 style={{
                   background: 'linear-gradient(to right, #669524 10%, #85AF34 35%, #A5C943 49%)',
                 }}
               >
-                {/* Decorative Circles */}
+                {/* Decorative Circles - Responsive positioning */}
                 <div
                   className="absolute bg-lime-400 rounded-full opacity-100"
                   style={{
-                    width: 220,
-                    height: 220,
-                    left: 30,
-                    top: -100,
+                    width: 'clamp(80px, 15vw, 220px)',
+                    height: 'clamp(80px, 15vw, 220px)',
+                    left: 'clamp(10px, 5vw, 30px)',
+                    top: 'clamp(-60px, -15vw, -100px)',
                     background: 'linear-gradient(110deg, #EFE842 30%, #669524 80%)',
                   }}
                 />
                 <div
                   className="absolute bg-lime-400 rounded-full opacity-100"
                   style={{
-                    width: 95,
-                    height: 95,
-                    left: 10,
-                    top: 140,
+                    width: 'clamp(40px, 8vw, 95px)',
+                    height: 'clamp(40px, 8vw, 95px)',
+                    left: 'clamp(5px, 2vw, 10px)',
+                    top: 'clamp(80px, 25vw, 140px)',
                     background: 'linear-gradient(110deg, #EFE842 30%, #669524 80%)',
                   }}
                 />
                 <div
                   className="absolute bg-lime-400 rounded-full opacity-100"
                   style={{
-                    width: 60,
-                    height: 60,
-                    left: 200,
-                    top: 130,
+                    width: 'clamp(30px, 5vw, 60px)',
+                    height: 'clamp(30px, 5vw, 60px)',
+                    left: 'clamp(100px, 25vw, 200px)',
+                    top: 'clamp(70px, 20vw, 130px)',
                     background: 'linear-gradient(110deg, #EFE842 30%, #669524 80%)',
                   }}
                 />
                 <div
-                  className="absolute bg-lime-400 rounded-full opacity-100"
+                  className="absolute bg-lime-400 rounded-full opacity-100 hidden md:block"
                   style={{
-                    width: 180,
-                    height: 180,
-                    left: 310,
-                    top: 180,
+                    width: 'clamp(90px, 12vw, 180px)',
+                    height: 'clamp(90px, 12vw, 180px)',
+                    left: 'clamp(155px, 25vw, 310px)',
+                    top: 'clamp(90px, 30vw, 180px)',
                     background: 'linear-gradient(110deg, #EFE842 30%, #669524 80%)',
                   }}
                 />
                 <div
-                  className="absolute bg-lime-400 rounded-full opacity-100"
+                  className="absolute bg-lime-400 rounded-full opacity-100 hidden lg:block"
                   style={{
-                    width: 200,
-                    height: 200,
-                    left: 720,
-                    top: -65,
+                    width: 'clamp(100px, 15vw, 200px)',
+                    height: 'clamp(100px, 15vw, 200px)',
+                    left: 'clamp(360px, 50vw, 720px)',
+                    top: 'clamp(-40px, -10vw, -65px)',
                     background: 'linear-gradient(110deg, #EFE842 30%, #669524 80%)',
                   }}
                 />
                 <div
-                  className="absolute bg-lime-400 rounded-full opacity-100"
+                  className="absolute bg-lime-400 rounded-full opacity-100 hidden lg:block"
                   style={{
-                    width: 300,
-                    height: 300,
-                    left: 600,
-                    top: 120,
+                    width: 'clamp(150px, 20vw, 300px)',
+                    height: 'clamp(150px, 20vw, 300px)',
+                    left: 'clamp(300px, 40vw, 600px)',
+                    top: 'clamp(60px, 20vw, 120px)',
                     background: 'linear-gradient(110deg, #EFE842 30%, #669524 80%)',
                   }}
                 />
                 <div
-                  className="absolute bg-lime-400 rounded-full opacity-100"
+                  className="absolute bg-lime-400 rounded-full opacity-100 hidden xl:block"
                   style={{
-                    width: 170,
-                    height: 170,
-                    left: 400,
-                    top: -100,
+                    width: 'clamp(85px, 12vw, 170px)',
+                    height: 'clamp(85px, 12vw, 170px)',
+                    left: 'clamp(200px, 30vw, 400px)',
+                    top: 'clamp(-60px, -15vw, -100px)',
                     background: 'linear-gradient(110deg, #EFE842 30%, #669524 80%)',
                   }}
                 />
                 <div
-                  className="absolute bg-lime-400 rounded-full opacity-100"
+                  className="absolute bg-lime-400 rounded-full opacity-100 hidden xl:block"
                   style={{
-                    width: 80,
-                    height: 80,
-                    left: 530,
-                    top: 10,
+                    width: 'clamp(40px, 6vw, 80px)',
+                    height: 'clamp(40px, 6vw, 80px)',
+                    left: 'clamp(265px, 35vw, 530px)',
+                    top: 'clamp(5px, 2vw, 10px)',
                     background: 'linear-gradient(110deg, #EFE842 30%, #669524 80%)',
                   }}
                 />
                 <div
-                  className="absolute bg-lime-400 rounded-full opacity-100"
+                  className="absolute bg-lime-400 rounded-full opacity-100 hidden 2xl:block"
                   style={{
-                    width: 110,
-                    height: 110,
-                    left: 1050,
-                    top: 90,
+                    width: 'clamp(55px, 8vw, 110px)',
+                    height: 'clamp(55px, 8vw, 110px)',
+                    left: 'clamp(525px, 70vw, 1050px)',
+                    top: 'clamp(45px, 15vw, 90px)',
                     background: 'linear-gradient(110deg, #EFE842 30%, #669524 80%)',
                   }}
                 />
@@ -159,9 +159,9 @@ const ProfilePage = () => {
           </div>
 
           {/* Avatar and Info */}
-          <div className="flex items-center gap-6 px-8 z-10 -mt-30">
+          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 px-4 sm:px-6 md:px-8 z-10 -mt-16 sm:-mt-20 md:-mt-24 lg:-mt-30">
             <div className="relative">
-              <div className="ml-13 w-52 h-52 rounded-full bg-black border-8 border-white flex items-center justify-center text-7xl font-bold overflow-hidden">
+              <div className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 lg:w-52 lg:h-52 rounded-full bg-black border-4 sm:border-6 md:border-8 border-white flex items-center justify-center text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold overflow-hidden">
                 {profileImage ? (
                   <img 
                     src={profileImage} 
@@ -172,7 +172,7 @@ const ProfilePage = () => {
                   <span className="text-white">{getInitials(username)}</span>
                 )}
               </div>
-              <label className="cursor-pointer absolute bottom-2 right-4" htmlFor="avatar-upload">
+              <label className="cursor-pointer absolute bottom-1 right-1 sm:bottom-2 sm:right-2 md:bottom-2 md:right-4" htmlFor="avatar-upload">
                 <input
                   id="avatar-upload"
                   type="file"
@@ -182,20 +182,20 @@ const ProfilePage = () => {
                   onChange={handleAvatarChange}
                 />
                 <div
-                  className="bg-lime-400 border-4 border-white w-12 h-12 rounded-full flex items-center shadow-md justify-center hover:bg-lime-500 transition"
+                  className="bg-lime-400 border-2 sm:border-3 md:border-4 border-white w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center shadow-md justify-center hover:bg-lime-500 transition"
                 >
-                  <ImCamera className="text-white" />
+                  <ImCamera className="text-white text-xs sm:text-sm md:text-base" />
                 </div>
               </label>
             </div>
-            <div className="flex flex-col gap-2 relative mt-5">
-              <span className="-ml-4 text-3xl font-black text-green-900">@{displayName}</span>
+            <div className="flex flex-col gap-2 relative mt-2 sm:mt-3 md:mt-5 text-center sm:text-left">
+              <span className="text-xl sm:text-2xl md:text-3xl font-black text-green-900">@{displayName}</span>
             </div>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="-ml-5 flex gap-10 mt-12 justify-center flex-wrap px-8">
+        <div className="flex gap-6 sm:gap-8 md:gap-10 lg:gap-12 mt-8 sm:mt-10 md:mt-12 justify-center flex-wrap px-6 sm:px-8 md:px-10 lg:px-12">
           {stats.map((stat, idx) => (
             <ProfileStatCard key={idx} title={stat.title} value={stat.value} highlight={stat.highlight} />
           ))}
