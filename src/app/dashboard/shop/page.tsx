@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ShopBoosterCard from '@/components/ShopBoosterCard';
 import ShopSeedPackCard from '@/components/ShopSeedPackCard';
 import { Poppins } from 'next/font/google';
@@ -11,94 +11,32 @@ const poppins = Poppins({
   weight: ["300", "400", "500", "600", "700"],
 });
 
-const boosters = [
-  {
-    title: 'Watering can',
-    price: '₵500.00',
-    imageSrc: '/shop-items/watering-can.png',
-    description: 'Essential tool for keeping your plants hydrated and healthy',
-    onBuy: () => alert('Bought Watering can!'),
-  },
-  {
-    title: 'Fertilizer',
-    price: '₵500.00',
-    imageSrc: '/shop-items/fertilizer.png',
-    description: 'Nutrient-rich fertilizer to boost plant growth',
-    onBuy: () => alert('Bought Fertilizer!'),
-  },
-  {
-    title: 'Garden Gloves',
-    price: '₵500.00',
-    imageSrc: '/shop-items/gardening-gloves.png',
-    description: 'Protective gloves for safe and comfortable gardening',
-    onBuy: () => alert('Bought Garden Gloves!'),
-  },
-  {
-    title: 'Growth Tonic',
-    price: '₵500.00',
-    imageSrc: '/shop-items/growth-tonic.png',
-    description: 'Special tonic to accelerate plant development',
-    onBuy: () => alert('Bought Growth Tonic!'),
-  },
-  {
-    title: 'Misting Bottle',
-    price: '₵500.00',
-    imageSrc: '/shop-items/misting-bottle.png',
-    description: 'Fine mist spray bottle for delicate plant care',
-    onBuy: () => alert('Bought Misting Bottle!'),
-  },
-  {
-    title: 'Magic Dust',
-    price: '₵500.00',
-    imageSrc: '/shop-items/magic-dust.png',
-    description: 'Magical enhancement dust for extraordinary plant growth',
-    onBuy: () => alert('Bought Magic Dust!'),
-  },
-];
-
-const seedPacks = [
-  {
-    title: 'Tomato Seeds',
-    rarity: 'Common',
-    price: '₵150.00',
-    imageSrc: '/seed-packs/bamboo.png',
-    description: 'Premium tomato seeds for a bountiful harvest',
-    onBuy: () => alert('Bought Tomato Seeds!'),
-  },
-  {
-    title: 'Herb Mix',
-    rarity: 'Rare',
-    price: '₵200.00',
-    imageSrc: '/seed-packs/primrose.png',
-    description: 'Assorted herb seeds for your kitchen garden',
-    onBuy: () => alert('Bought Herb Mix!'),
-  },
-  {
-    title: 'Flower Seeds',
-    rarity: 'Legendary',
-    price: '₵100.00',
-    imageSrc: '/seed-packs/spooky-pumpkin.png',
-    description: 'Beautiful flower seeds to brighten your garden',
-    onBuy: () => alert('Bought Flower Seeds!'),
-  },
-  {
-    title: 'Vegetable Mix',
-    rarity: 'Mythical',
-    price: '₵250.00',
-    imageSrc: '/seed-packs/wild-cactus.png',
-    description: 'Variety pack of vegetable seeds for fresh produce',
-    onBuy: () => alert('Bought Vegetable Mix!'),
-  },
-];
-
 const ShopPage = () => {
   const [activeCategory, setActiveCategory] = useState('boosters');
-  
-  // TO BE REPLACED WITH THE ACTUAL USER LEVEL AND COINS
   const [userLevel, setUserLevel] = useState(20); // Example: user is level 20
   const [userCoins, setUserCoins] = useState(2500); // Example: user has 2500 coins
-  
-  const currentItems = activeCategory === 'boosters' ? boosters : seedPacks;
+  const [boosters, setBoosters] = useState<any[]>([]);
+  const [seedPacks, setSeedPacks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch('/api/shop-items')
+      .then(async (res) => {
+        if (!res.ok) throw new Error('Failed to fetch shop items');
+        return res.json();
+      })
+      .then((data) => {
+        setBoosters(data.boosters || []);
+        setSeedPacks(data.seedPacks || []);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err.message);
+        setLoading(false);
+      });
+  }, []);
 
   const rarityLevels = {
     'Common': 1,
@@ -120,6 +58,9 @@ const ShopPage = () => {
       return userLevel < requiredLevel;
     });
   };
+
+  if (loading) return <div className="text-center py-12">Loading shop items...</div>;
+  if (error) return <div className="text-center py-12 text-red-500">{error}</div>;
 
   return (
     <>
@@ -172,13 +113,25 @@ const ShopPage = () => {
         >
           {activeCategory === 'boosters'
             ? boosters.map((item, idx) => (
-                <ShopBoosterCard key={`booster-${idx}`} {...item} />
+                <ShopBoosterCard
+                  key={`booster-${item._id || idx}`}
+                  title={item.name}
+                  price={`₵${item.price?.toLocaleString() || '0.00'}`}
+                  imageSrc={item.itemImageUrl}
+                  description={item.description}
+                  onBuy={() => alert(`Bought ${item.name}!`)}
+                />
               ))
             : seedPacks.map((item, idx) => (
-                <ShopSeedPackCard 
-                  key={`seedpack-${idx}`} 
-                  {...item} 
+                <ShopSeedPackCard
+                  key={`seedpack-${item._id || idx}`}
+                  title={item.name}
+                  rarity={item.rarity}
+                  price={`₵${item.price?.toLocaleString() || '0.00'}`}
+                  imageSrc={item.imageUrl}
+                  description={item.description}
                   userLevel={userLevel}
+                  onBuy={() => alert(`Bought ${item.name}!`)}
                 />
               ))}
         </div>
