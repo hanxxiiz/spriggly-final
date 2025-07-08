@@ -48,18 +48,10 @@ const Navbar = () => {
                   </li>
                   <li>
                     <a 
-                      href="/dashboard/focus"
+                      href="/dashboard/Focus"
                       className="hover:text-lime-700 text-gray-700 rounded block px-3 py-2"
                     >
                       Focus
-                    </a>
-                  </li>
-                  <li>
-                    <a 
-                      href="/dashboard/my_plants"
-                      className="hover:text-lime-700 text-gray-700 rounded block px-3 py-2"
-                    >
-                      My Plants
                     </a>
                   </li>
                   <li>

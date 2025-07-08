@@ -367,31 +367,31 @@ export default function DashboardPage() {
                 <div className="text-gray-400">No leaderboard data</div>
               ) : (
                 leaderboard.slice(0, 3).map((user, i) => {
-                  const yellowShades = ['#fef08a', '#fde047', '#facc15'];
-                  const bgColor = i < 3 ? yellowShades[i] : '#fef9c3';
-                  return (
-                    <div
-                      key={user.name}
-                      style={{ backgroundColor: bgColor }}
-                      className={`
-                        flex items-center rounded-2xl p-2 md:p-3 mb-3 last:mb-0
-                        transform transition-all duration-300 cursor-pointer
-                        hover:scale-105 hover:shadow-[0_0_15px_#fde047]
-                      `}
-                    >
+                const yellowShades = ['#fef08a', '#fde047', '#facc15']; 
+                const bgColor = i < 3 ? yellowShades[i] : '#fef9c3';
+                return (
+                  <div
+                    key={user.name}
+                    style={{ backgroundColor: bgColor }}
+                    className={`
+                      flex items-center rounded-2xl p-2 md:p-3 mb-3 last:mb-0
+                      transform transition-all duration-300 cursor-pointer
+                      hover:scale-105 hover:shadow-[0_0_15px_#fde047]
+                    `}
+                  >
                       <div className="w-10 h-10 md:w-12 md:h-12 bg-gray-300 rounded-full mr-3 md:mr-4 flex items-center justify-center font-bold text-lg md:text-2xl overflow-hidden">
                         {user.profilePictureUrl ? (
                           <img src={user.profilePictureUrl} alt={user.name} className="w-full h-full object-cover rounded-full" />
                         ) : (
                           getInitials(user.name)
                         )}
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-bold text-green-900 text-base md:text-xl">{user.name}</div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-bold text-green-900 text-base md:text-xl">{user.name}</div>
                         <div className="text-xs text-gray-700">XP: {user.xp}</div>
                       </div>
-                    </div>
-                  );
+                  </div>
+                );
                 })
               )}
               <div className="flex justify-center mt-2 lg:mt-8">
