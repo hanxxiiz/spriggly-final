@@ -15,15 +15,15 @@ export async function POST(req: Request) {
 
     await connectDB();
 
-    // Check if user already exists by email or name (username)
-    const existingUser = await User.findOne({ $or: [ { email }, { name } ] });
+    // Check if user already exists by email or username
+    const existingUser = await User.findOne({ $or: [ { email }, { username: name } ] });
     if (existingUser) {
       if (existingUser.email === email) {
         return NextResponse.json(
           { error: 'Email already in use' },
           { status: 400 }
         );
-      } else if (existingUser.name === name) {
+      } else if (existingUser.username === name) {
         return NextResponse.json(
           { error: 'Username already in use' },
           { status: 400 }
@@ -31,15 +31,15 @@ export async function POST(req: Request) {
       }
     }
 
-    // Create new user
+    // Create new user with correct field names
     const user = await User.create({
-      name,
+      username: name, // Map 'name' from form to 'username' in database
       email,
-      password,
+      hashedPassword: password, // Map 'password' from form to 'hashedPassword' in database
     });
 
     return NextResponse.json(
-      { message: 'User created successfully', user: { id: user._id, name: user.name, email: user.email } },
+      { message: 'User created successfully', user: { id: user._id, username: user.username, email: user.email } },
       { status: 201 }
     );
   } catch (error: any) {

@@ -5,8 +5,10 @@ import { SessionStrategy } from "next-auth";
 
 interface MongoUser {
   _id: any;
-  name: string;
+  username: string;
   email: string;
+  hashedPassword?: string;
+  password?: string; // For backward compatibility with plain text passwords
   comparePassword: (input: string) => Promise<boolean>;
 }
 
@@ -25,13 +27,24 @@ export const authOptions = {
 
         await connectDB();
 
-        const user = await User.findOne({ email: credentials.email }).select("+password") as MongoUser;
+        // Try to find user by email, include both password fields
+        const user = await User.findOne({ email: credentials.email })
+          .select("+hashedPassword +password") as MongoUser;
 
         if (!user) {
           throw new Error("No user found with this email");
         }
 
-        const isPasswordValid = await user.comparePassword(credentials.password);
+        let isPasswordValid = false;
+
+        // Check if user has hashed password (new format)
+        if (user.hashedPassword) {
+          isPasswordValid = await user.comparePassword(credentials.password);
+        } 
+        // Check if user has plain text password (old format)
+        else if (user.password) {
+          isPasswordValid = user.password === credentials.password;
+        }
 
         if (!isPasswordValid) {
           throw new Error("Invalid password");
@@ -39,7 +52,7 @@ export const authOptions = {
 
         return {
           id: user._id.toString(),
-          name: user.name,
+          name: user.username, // Use username as the display name
           email: user.email,
         };
       },

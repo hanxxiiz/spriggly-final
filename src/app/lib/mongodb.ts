@@ -1,6 +1,11 @@
 import { MongoClient } from 'mongodb';
 
-const uri = process.env.MONGODB_URI!;
+const uri = process.env.MONGODB_URI;
+
+if (!uri) {
+  throw new Error('❌ Please define MONGODB_URI in your .env.local');
+}
+
 const options = {};
 
 let client;
@@ -15,5 +20,11 @@ if (!global._mongoClientPromise) {
   global._mongoClientPromise = client.connect();
 }
 clientPromise = global._mongoClientPromise;
+
+// Helper function to get the database instance
+export async function getDatabase() {
+  const client = await clientPromise;
+  return client.db('spriggly_db');
+}
 
 export default clientPromise;
