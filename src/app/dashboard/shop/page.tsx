@@ -14,7 +14,7 @@ const poppins = Poppins({
 const ShopPage = () => {
   const [activeCategory, setActiveCategory] = useState('boosters');
   const [userLevel, setUserLevel] = useState(20); // Example: user is level 20
-  const [userCoins, setUserCoins] = useState(2500); // Example: user has 2500 coins
+  const [userCoins, setUserCoins] = useState<number | null>(null); // Start as null
   const [boosters, setBoosters] = useState<any[]>([]);
   const [seedPacks, setSeedPacks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -22,6 +22,16 @@ const ShopPage = () => {
 
   useEffect(() => {
     setLoading(true);
+    // Fetch user coins from profile
+    fetch('/api/profile')
+      .then(async (res) => {
+        if (res.ok) {
+          const data = await res.json();
+          setUserCoins(data.currentCoins || 0);
+        }
+      })
+      .catch(() => setUserCoins(0));
+    // Fetch shop items
     fetch('/api/shop-items')
       .then(async (res) => {
         if (!res.ok) throw new Error('Failed to fetch shop items');
@@ -59,6 +69,26 @@ const ShopPage = () => {
     });
   };
 
+  // Add this function to handle purchases
+  const handleBuy = async (itemType: 'booster' | 'seed', templateId: string, price: number) => {
+    try {
+      const res = await fetch('/api/shop-items/buy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itemType, templateId, price }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setUserCoins(data.coins);
+        // Optionally show a success message
+      } else {
+        alert(data.error || 'Purchase failed');
+      }
+    } catch (err) {
+      alert('Purchase failed');
+    }
+  };
+
   if (loading) return <div className="text-center py-12">Loading shop items...</div>;
   if (error) return <div className="text-center py-12 text-red-500">{error}</div>;
 
@@ -75,7 +105,7 @@ const ShopPage = () => {
           <div className="flex items-center gap-2 bg-yellow-50 border-2 border-yellow-400 rounded-full px-2 py-1 lg:px-4 lg:py-2">
             <span className="text-xl">🪙</span>
             <span className="text-sm lg:text-lg font-semibold text-yellow-600">
-              {userCoins.toLocaleString()}
+              {userCoins !== null ? userCoins.toLocaleString() : '...'}
             </span>
           </div>
           
@@ -119,7 +149,7 @@ const ShopPage = () => {
                   price={`₵${item.price?.toLocaleString() || '0.00'}`}
                   imageSrc={item.itemImageUrl}
                   description={item.description}
-                  onBuy={() => alert(`Bought ${item.name}!`)}
+                  onBuy={() => handleBuy('booster', item._id, item.price)}
                 />
               ))
             : seedPacks.map((item, idx) => (
@@ -131,7 +161,7 @@ const ShopPage = () => {
                   imageSrc={item.imageUrl}
                   description={item.description}
                   userLevel={userLevel}
-                  onBuy={() => alert(`Bought ${item.name}!`)}
+                  onBuy={() => handleBuy('seed', item._id, item.price)}
                 />
               ))}
         </div>

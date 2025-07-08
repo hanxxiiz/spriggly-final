@@ -465,39 +465,24 @@ export default function FocusPage() {
   return (
     <>
       <Navbar />
-      <main className={`${poppins.className} flex-1 flex flex-col bg-white min-h-screen pt-18 py-4 px-8 relative`}>
-        <h1 className="text-4xl font-bold text-green-800 mb-5">Focus</h1>
-        <div className="flex flex-col lg:flex-row gap-5 justify-center items-start">
+      <main className={`${poppins.className} flex-1 flex flex-col bg-white min-h-screen pt-18 py-4 px-2 sm:px-4 md:px-8 lg:px-12 xl:px-24 2xl:px-48 relative`}>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-green-800 mb-4 sm:mb-5">Focus</h1>
+        <div className="flex flex-col lg:flex-row gap-4 md:gap-6 lg:gap-8 justify-center items-start w-full">
           {/* FOCUS CARD */}
-          <div className="bg-[#63d471] rounded-[25px] lg:rounded-[50px] shadow-lg p-10 md:p-15 lg:p-15 flex-1 flex flex-col items-center 
-            min-h-[530px] md:min-h-[630px] lg:min-h-[630px]
-            min-w-[300px] lg:min-w-[1000px]"
-            style={{
-            background: 'linear-gradient(to top right, #63d471, #233329)',
-            }}
+          <div className="bg-[#63d471] rounded-2xl lg:rounded-[50px] shadow-lg p-5 sm:p-8 md:p-10 lg:p-12 flex-1 flex flex-col items-center min-h-[400px] md:min-h-[530px] lg:min-h-[630px] w-full max-w-full lg:max-w-[700px] xl:max-w-[900px] 2xl:max-w-[1100px] mx-auto"
+            style={{ background: 'linear-gradient(to top right, #63d471, #233329)' }}
           >
-            <SpotlightCard className="w-full rounded-[15px] ] py-25 lg:py-10 lg:rounded-[40px] min-h-[400px] md:min-h-[450px] lg:min-h-[450px]"
+            <SpotlightCard className="w-full rounded-[15px] py-10 lg:py-14 lg:rounded-[40px] min-h-[200px] md:min-h-[300px] lg:min-h-[350px]"
               spotlightColor="rgba(227, 252, 0, 0.26)" 
             >
               <div className="flex flex-col items-center justify-center text-center text-xs font-semibold lg:text-base">
-                <div className="text-[#e4fe62] ">
-                  The next leaf awaits
-                </div>
-                <img
-                  src="/focus-img-one.png"
-                  alt="Decorative leaf"
-                  className="w-52 lg:w-85 h-auto"
-                />
-                <div className="text-[#e4fe62] ">
-                  Begin your focus journey now
-                </div>
+                <div className="text-[#e4fe62] ">The next leaf awaits</div>
+                <img src="/focus-img-one.png" alt="Decorative leaf" className="w-32 sm:w-44 md:w-52 lg:w-72 xl:w-96 h-auto" />
+                <div className="text-[#e4fe62] ">Begin your focus journey now</div>
               </div>
             </SpotlightCard>
             <button 
-              className="mt-5 w-30 lg:w-40 h-10 lg:h-12 text-[#245329] font-bold text-[16px] rounded-full drop-shadow-lg border-none cursor-pointer 
-                        bg-[#e4fe62] shadow-sm
-                        hover:scale-105 hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
-                        transition-transform duration-300 ease-in-out"
+              className="mt-4 sm:mt-6 w-24 sm:w-32 md:w-40 h-10 md:h-12 text-[#245329] font-bold text-base rounded-full drop-shadow-lg border-none cursor-pointer bg-[#e4fe62] shadow-sm hover:scale-105 hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-transform duration-300 ease-in-out"
               onClick={() => setShowFocusTimerModal(true)}
             >
               Start
@@ -505,26 +490,23 @@ export default function FocusPage() {
           </div>
 
           {/* TASKS AND FINISHED TASKS */}
-          <div className="flex flex-col gap-5 flex-1">
+          <div className="flex flex-col gap-4 md:gap-6 flex-1 w-full max-w-full lg:max-w-[400px] xl:max-w-[500px] 2xl:max-w-[600px] mx-auto">
             {/* TASKS CARD */}
-            <div className="bg-[#E4FE62] rounded-3xl shadow-lg p-5   flex flex-col h-[450px] min-w-[300px] lg:min-w-[400px]">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl lg:text-2xl font-bold text-[#AFB846]">Tasks</h2>
+            <div className="bg-[#E4FE62] rounded-2xl shadow-lg p-4 sm:p-5 md:p-6 flex flex-col h-[350px] sm:h-[400px] md:h-[450px] min-w-0 w-full">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#AFB846]">Tasks</h2>
                 <button 
-                  className="text-white font-bold px-5 py-1 text-xs lg:text-lg lg:px-10 lg:py-2 rounded-full drop-shadow-lg border-none cursor-pointer 
-                        bg-[#9E1F1F] shadow-sm
-                        hover:scale-105 hover:bg-red-600
-                        transition-transform duration-300 ease-in-out" 
+                  className="text-white font-bold px-3 sm:px-5 py-1 text-xs md:text-lg rounded-full drop-shadow-lg border-none cursor-pointer bg-[#9E1F1F] shadow-sm hover:scale-105 hover:bg-red-600 transition-transform duration-300 ease-in-out" 
                   onClick={() => setShowAddTaskModal(true)}
                 >
                   +Add
                 </button>
               </div>
-              <div className="flex w-full gap-2 mb-3">
+              <div className="flex w-full gap-1 sm:gap-2 mb-2 sm:mb-3">
                 {(['high', 'medium', 'low'] as Priority[]).map(filter => (
                   <button 
                     key={filter}
-                    className={`flex-1 py-1 text-xs lg:py-2 rounded-lg font-semibold transition-colors cursor-pointer ${
+                    className={`flex-1 py-1 sm:py-2 text-xs md:text-sm rounded-lg font-semibold transition-colors cursor-pointer ${
                       taskFilter === filter 
                         ? getPriorityColor(filter) + ' text-white' 
                         : 'bg-[#AFB846] text-gray-700 hover:scale-105 transition-transform duration-300 ease-in-out'
@@ -536,7 +518,7 @@ export default function FocusPage() {
                 ))}
               </div>
 
-              <div className="flex flex-col gap-3 flex-1 overflow-y-auto">
+              <div className="flex flex-col gap-2 sm:gap-3 flex-1 overflow-y-auto">
                 {getFilteredTasks().map(task => {
                   const isExpanded = expandedTaskId === task._id;
 
@@ -546,9 +528,9 @@ export default function FocusPage() {
                       draggable
                       onDragStart={(e) => handleDragStart(e, task)}
                       onClick={() => setExpandedTaskId(prev => (prev === task._id ? null : task._id))}
-                      className="bg-white rounded-lg px-4 py-2 border-2 border-gray-200 cursor-pointer hover:shadow-md transition-shadow max-w-[260] lg:max-w-[390px]"
+                      className="bg-white rounded-lg px-3 sm:px-4 py-2 border-2 border-gray-200 cursor-pointer hover:shadow-md transition-shadow max-w-full"
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 sm:gap-3">
                         <input 
                           type="checkbox"
                           className="w-4 h-4 text-green-600 bg-white border-2 border-gray-300 rounded focus:ring-green-500"
@@ -558,13 +540,13 @@ export default function FocusPage() {
                           }}
                         />
                         <div className="flex-1">
-                          <div className="font-semibold text-xs lg:text-lg text-green-800">{task.taskName}</div>
-                          <div className="text-[8px] lg:text-[10px] text-gray-500">Due: {new Date(task.dueDate).toLocaleDateString()}</div>
+                          <div className="font-semibold text-xs md:text-lg text-green-800">{task.taskName}</div>
+                          <div className="text-[8px] md:text-[10px] text-gray-500">Due: {new Date(task.dueDate).toLocaleDateString()}</div>
                         </div>
                       </div>
 
                       {isExpanded && (
-                        <div className="mt-2 pl-8 pr-2 text-xs lg:text-sm text-gray-700 whitespace-normal break-words">
+                        <div className="mt-2 pl-6 sm:pl-8 pr-2 text-xs md:text-sm text-gray-700 whitespace-normal break-words">
                           <p>{task.description || <span className="italic text-gray-400">No description provided.</span>}</p>
                         </div>
                       )}
@@ -573,9 +555,9 @@ export default function FocusPage() {
                 })}
 
                 {getFilteredTasks().length === 0 && (
-                  <div className="text-center text-[#AFB846] py-8 flex flex-col items-center justify-center gap-2">
+                  <div className="text-center text-[#AFB846] py-6 sm:py-8 flex flex-col items-center justify-center gap-2">
                     <span>No {taskFilter} priority tasks</span>
-                    <MdOutlineAddTask size={200} className="text-[#AFB846]" />
+                    <MdOutlineAddTask size={100} className="text-[#AFB846]" />
                   </div>
                 )}
               </div>
@@ -583,15 +565,14 @@ export default function FocusPage() {
 
             {/* FINISHED TASKS CARD*/}
             <div
-              className={`rounded-3xl shadow-lg p-5 sm:p-6 md:p-7 flex flex-col max-h-[180px] min-w-[300px] lg:min-w-[400px] 
-                ${isDragging ? 'transition-transform duration-300 ease-in-out scale-105 bg-yellow-300' : 'bg-[#E4FE62]'}`}
+              className={`rounded-2xl shadow-lg p-4 sm:p-5 md:p-6 flex flex-col max-h-[120px] sm:max-h-[150px] md:max-h-[180px] min-w-0 w-full ${isDragging ? 'transition-transform duration-300 ease-in-out scale-105 bg-yellow-300' : 'bg-[#E4FE62]'}`}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
             >
-              <h2 className="text-xl lg:text-2xl font-bold text-[#AFB846]">Finished Tasks</h2>
-              <div className="text-7xl font-bold text-green-800">{finishedTasks.length}</div>
-              <div className="text-xs lg:text-sm text-green-700">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#AFB846]">Finished Tasks</h2>
+              <div className="text-4xl sm:text-5xl md:text-7xl font-bold text-green-800">{finishedTasks.length}</div>
+              <div className="text-xs md:text-sm text-green-700">
                 <div className="flex justify-between items-center">
                   <span>XP:</span>
                   <span className="font-bold">{totalXP}</span>

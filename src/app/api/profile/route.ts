@@ -22,7 +22,7 @@ export async function GET() {
     console.log('Profile API: Database connected');
 
     const user = await User.findById(session.user.id).select(
-      'username totalFocusHours tasksCompleted totalPlantsCollected totalCoinsEarned longestStreak profilePictureUrl'
+      'username totalFocusHours tasksCompleted totalPlantsCollected totalCoinsEarned longestStreak profilePictureUrl currentCoins'
     );
 
     console.log('Profile API: User found:', user);
@@ -54,6 +54,7 @@ export async function GET() {
       totalCoinsEarned: user.totalCoinsEarned || 0,
       longestStreak: user.longestStreak || 0,
       profilePictureUrl: user.profilePictureUrl || null,
+      currentCoins: user.currentCoins || 0,
     };
 
     console.log('Profile API: Returning data:', responseData);
