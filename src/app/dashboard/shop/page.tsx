@@ -94,8 +94,9 @@ const seedPacks = [
 const ShopPage = () => {
   const [activeCategory, setActiveCategory] = useState('boosters');
   
-  // TO BE REPLACED WITH THE ACTUAL USER LEVEL
-  const [userLevel, setUserLevel] = useState(20); // Example: user is level 10
+  // TO BE REPLACED WITH THE ACTUAL USER LEVEL AND COINS
+  const [userLevel, setUserLevel] = useState(20); // Example: user is level 20
+  const [userCoins, setUserCoins] = useState(2500); // Example: user has 2500 coins
   
   const currentItems = activeCategory === 'boosters' ? boosters : seedPacks;
 
@@ -128,7 +129,16 @@ const ShopPage = () => {
           <h1 className="text-3xl sm:text-4xl font-bold text-green-800">Shop</h1>
         </div>
         
-        <div className="flex justify-end mb-5 lg:mb-6">
+        <div className="flex justify-between items-center mb-5 lg:mb-6">
+          {/* Coin Counter */}
+          <div className="flex items-center gap-2 bg-yellow-50 border-2 border-yellow-400 rounded-full px-2 py-1 lg:px-4 lg:py-2">
+            <span className="text-xl">🪙</span>
+            <span className="text-sm lg:text-lg font-semibold text-yellow-600">
+              {userCoins.toLocaleString()}
+            </span>
+          </div>
+          
+          {/* Category Toggle */}
           <div className="flex bg-white border-2 border-[#245329] rounded-full p-1 gap-1">
             <button
               onClick={() => setActiveCategory('boosters')}

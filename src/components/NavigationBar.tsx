@@ -40,7 +40,7 @@ const Navbar = () => {
                   </li>
                   <li>
                     <a 
-                      href="#"
+                      href="/grow"
                       className="hover:text-lime-700 text-gray-700 rounded block px-3 py-2"
                     >
                       Grow
@@ -72,7 +72,7 @@ const Navbar = () => {
                   </li>
                   <li>
                     <a 
-                      href="#"
+                      href="/dashboard/leaderboard"
                       className="hover:text-lime-700 text-gray-700 rounded block px-3 py-2"
                     >
                       Leaderboard
@@ -80,7 +80,7 @@ const Navbar = () => {
                   </li>
                   <li>
                     <a 
-                      href="#"
+                      href="/dashboard/notifications"
                       className="hover:text-lime-700 text-gray-700 rounded block px-3 py-2"
                     >
                       Notifications
