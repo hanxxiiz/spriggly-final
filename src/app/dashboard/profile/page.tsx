@@ -49,6 +49,19 @@ const ProfilePage = () => {
     };
 
     fetchUserStats();
+
+    // Listen for task completion events from Focus page
+    const handleTaskCompleted = () => {
+      console.log('Profile page: Task completed event received, refreshing data...');
+      fetchUserStats();
+    };
+
+    window.addEventListener('taskCompleted', handleTaskCompleted);
+
+    // Cleanup event listener
+    return () => {
+      window.removeEventListener('taskCompleted', handleTaskCompleted);
+    };
   }, [session?.user?.id]);
 
   const getInitials = (name: string) => {
