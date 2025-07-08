@@ -15,27 +15,20 @@ export async function POST(req: Request) {
 
     await connectDB();
 
-    // Check if user already exists by email or username
-    const existingUser = await User.findOne({ $or: [ { email }, { username: name } ] });
+    // Check if user already exists
+    const existingUser = await User.findOne({ $or: [{ email }, { username: name }] });
     if (existingUser) {
-      if (existingUser.email === email) {
-        return NextResponse.json(
-          { error: 'Email already in use' },
-          { status: 400 }
-        );
-      } else if (existingUser.username === name) {
-        return NextResponse.json(
-          { error: 'Username already in use' },
-          { status: 400 }
-        );
-      }
+      return NextResponse.json(
+        { error: 'User already exists' },
+        { status: 400 }
+      );
     }
 
     // Create new user with all fields initialized to proper defaults
     const user = await User.create({
-      username: name, // Map 'name' from form to 'username' in database
+      username: name,
       email,
-      hashedPassword: password, // Map 'password' from form to 'hashedPassword' in database
+      hashedPassword: password,
       // Initialize all numeric fields to 0
       level: 1,
       userCurrentXp: 0,
@@ -53,19 +46,18 @@ export async function POST(req: Request) {
       dailyStreakDay: 0,
     });
 
-    return NextResponse.json(
-      { 
-        message: 'User created successfully', 
-        user: { 
-          id: user._id, 
-          username: user.username, 
-          email: user.email,
-          level: user.level,
-          currentCoins: user.currentCoins
-        } 
-      },
-      { status: 201 }
-    );
+    return NextResponse.json({
+      message: 'Test user created successfully',
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        level: user.level,
+        currentCoins: user.currentCoins,
+        userCurrentXp: user.userCurrentXp,
+        currentStreak: user.currentStreak
+      }
+    });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message },

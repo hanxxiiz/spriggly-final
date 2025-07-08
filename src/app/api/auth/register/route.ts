@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import clientPromise from '@/app/lib/mongodb';
+import { getDatabase } from '@/app/lib/mongodb';
 
 export async function POST(req: Request) {
   try {
@@ -13,8 +13,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const client = await clientPromise;
-    const db = client.db('loginApp'); // Make sure this name matches your MongoDB DB name
+    const db = await getDatabase();
     const users = db.collection('users');
 
     const userExists = await users.findOne({ email });

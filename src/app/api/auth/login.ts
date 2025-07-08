@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import clientPromise from '@/app/lib/mongodb';
+import { getDatabase } from '@/app/lib/mongodb';
 
 export async function POST(req: Request) {
   try {
@@ -10,8 +10,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: 'Email and password are required' }, { status: 400 });
     }
 
-    const client = await clientPromise;
-    const db = client.db('loginApp');
+    const db = await getDatabase();
     const users = db.collection('users');
 
     const user = await users.findOne({ email });

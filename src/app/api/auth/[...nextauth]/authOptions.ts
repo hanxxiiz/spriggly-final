@@ -5,8 +5,10 @@ import { SessionStrategy } from "next-auth";
 
 interface MongoUser {
   _id: any;
-  name: string;
+  username: string;
   email: string;
+  hashedPassword?: string;
+  password?: string; // For backward compatibility with plain text passwords
   comparePassword: (input: string) => Promise<boolean>;
 }
 
@@ -25,13 +27,24 @@ export const authOptions = {
 
         await connectDB();
 
-        const user = await User.findOne({ email: credentials.email }).select("+password") as MongoUser;
+        // Try to find user by email, include both password fields
+        const user = await User.findOne({ email: credentials.email })
+          .select("+hashedPassword +password") as MongoUser;
 
         if (!user) {
           throw new Error("No user found with this email");
         }
 
-        const isPasswordValid = await user.comparePassword(credentials.password);
+        let isPasswordValid = false;
+
+        // Check if user has hashed password (new format)
+        if (user.hashedPassword) {
+          isPasswordValid = await user.comparePassword(credentials.password);
+        } 
+        // Check if user has plain text password (old format)
+        else if (user.password) {
+          isPasswordValid = user.password === credentials.password;
+        }
 
         if (!isPasswordValid) {
           throw new Error("Invalid password");
@@ -39,15 +52,16 @@ export const authOptions = {
 
         return {
           id: user._id.toString(),
-          name: user.name,
+          name: user.username, // Use username as the display name
           email: user.email,
         };
       },
     }),
   ],
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || "your-secret-key-here",
   session: {
     strategy: "jwt" as SessionStrategy,
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
     signIn: "/auth/login",
@@ -56,16 +70,25 @@ export const authOptions = {
     async jwt({ token, user }: { token: any; user?: any }) {
       if (user) {
         token.id = (user as any).id;
+        token.email = user.email;
+        token.name = user.name;
       }
       return token;
     },
     async session({ session, token }: { session: any; token: any }) {
       if (token && session.user) {
         session.user.id = token.id;
+        session.user.email = token.email;
+        session.user.name = token.name;
       } else if (token) {
-        session.user = { id: token.id };
+        session.user = { 
+          id: token.id,
+          email: token.email,
+          name: token.name
+        };
       }
       return session;
     },
   },
+  debug: process.env.NODE_ENV === 'development',
 }; 

@@ -2,17 +2,32 @@ import mongoose, { Document, Model } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
 interface IUser extends Document {
-  name: string;
+  username: string;
   email: string;
-  password: string;
-  createdAt: Date;
+  hashedPassword: string;
+  password?: string; // For backward compatibility with plain text passwords
+  level: number;
+  userCurrentXp: number;
+  currentStreak: number;
+  longestStreak: number;
+  currentCoins: number;
+  totalCoinsEarned: number;
+  totalCoinsSpent: number;
+  totalFocusHours: number;
+  tasksCompleted: number;
+  totalPlantsCollected: number;
+  profilePictureUrl: string;
+  currentPlantIds: mongoose.Types.ObjectId[];
+  lastClaimedDate: Date;
+  dailyStreakDay: number;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
 const userSchema = new mongoose.Schema<IUser>({
-  name: {
+  username: {
     type: String,
-    required: [true, 'Please provide a name'],
+    required: [true, 'Please provide a username'],
+    unique: true,
   },
   email: {
     type: String,
@@ -23,23 +38,82 @@ const userSchema = new mongoose.Schema<IUser>({
       'Please provide a valid email',
     ],
   },
-  password: {
+  hashedPassword: {
     type: String,
-    required: [true, 'Please provide a password'],
+    required: false, // Make it optional for backward compatibility
     select: false,
   },
-  createdAt: {
+  password: {
+    type: String,
+    required: false, // For backward compatibility with plain text passwords
+    select: false,
+  },
+  level: {
+    type: Number,
+    default: 1,
+  },
+  userCurrentXp: {
+    type: Number,
+    default: 0,
+  },
+  currentStreak: {
+    type: Number,
+    default: 0,
+  },
+  longestStreak: {
+    type: Number,
+    default: 0,
+  },
+  currentCoins: {
+    type: Number,
+    default: 0,
+  },
+  totalCoinsEarned: {
+    type: Number,
+    default: 0,
+  },
+  totalCoinsSpent: {
+    type: Number,
+    default: 0,
+  },
+  totalFocusHours: {
+    type: Number,
+    default: 0,
+  },
+  tasksCompleted: {
+    type: Number,
+    default: 0,
+  },
+  totalPlantsCollected: {
+    type: Number,
+    default: 0,
+  },
+  profilePictureUrl: {
+    type: String,
+    default: '',
+  },
+  currentPlantIds: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Plant',
+  }],
+  lastClaimedDate: {
     type: Date,
     default: Date.now,
   },
+  dailyStreakDay: {
+    type: Number,
+    default: 0,
+  },
+}, {
+  collection: 'Users', // Specify the correct collection name
 });
 
-// 🔐 Hash the password before saving
+// 🔐 Hash the password before saving (only for new hashedPassword field)
 userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+  if (!this.isModified('hashedPassword')) return next();
 
   const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
+  this.hashedPassword = await bcrypt.hash(this.hashedPassword, salt);
 
   next();
 });
@@ -48,7 +122,10 @@ userSchema.pre('save', async function (next) {
 userSchema.methods.comparePassword = async function (
   candidatePassword: string
 ): Promise<boolean> {
-  return await bcrypt.compare(candidatePassword, this.password);
+  if (this.hashedPassword) {
+    return await bcrypt.compare(candidatePassword, this.hashedPassword);
+  }
+  return false;
 };
 
 // Export model safely
