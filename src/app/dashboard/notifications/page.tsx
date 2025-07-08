@@ -1,44 +1,28 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '../../../components/NavigationBar';
 import NotificationCard from '../../../components/NotificationCard';
 
-// Example notification types: task, security, general
-const initialNotifications = [
-  {
-    id: 1,
-    type: 'Security',
-    message: 'Password changed successfully!',
-    time: '2 hours ago',
-    icon: '🔒',
-    color: 'bg-lime-700',
-    read: false,
-  },
-  {
-    id: 2,
-    type: 'Task',
-    message: 'You completed "Water your plant"!',
-    time: '10 minutes ago',
-    icon: '✅',
-    color: 'bg-green-600',
-    read: false,
-  },
-  {
-    id: 3,
-    type: 'General',
-    message: 'Welcome to Spriggly! Start growing your first plant.',
-    time: '1 day ago',
-    icon: '🌱',
-    color: 'bg-lime-500',
-    read: true,
-  },
-];
-
 const NotificationsPage = () => {
-  const [notifications, setNotifications] = useState(initialNotifications);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const markAllAsRead = () => {
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      setLoading(true);
+      const response = await fetch('/api/notifications');
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications(data.notifications || []);
+      }
+      setLoading(false);
+    };
+    fetchNotifications();
+  }, []);
+
+  const markAllAsRead = async () => {
+    // Optionally, implement a PATCH/PUT request to mark all as read in the DB
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
 
@@ -66,15 +50,16 @@ const NotificationsPage = () => {
 
           {/* Notification List */}
           <div className="bg-white rounded-b-2xl shadow px-4 pb-6 pt-2">
-            {notifications.length === 0 && (
+            {loading && <div className="text-center text-gray-400 py-12">Loading...</div>}
+            {!loading && notifications.length === 0 && (
               <div className="text-center text-gray-400 py-12">No notifications</div>
             )}
             {notifications.map((notif) => (
               <NotificationCard
-                key={notif.id}
+                key={notif._id}
                 type={notif.type}
                 message={notif.message}
-                time={notif.time}
+                time={new Date(notif.createdAt).toLocaleString()}
                 icon={notif.icon}
                 color={notif.color}
                 read={notif.read}
