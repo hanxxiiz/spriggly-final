@@ -40,9 +40,21 @@ const ProfilePage = () => {
         console.error('Failed to load profile data:', error);
       }
     };
-    if (session?.user?.id) {
+
+    loadProfileData();
+
+    // Listen for task completion events from Focus page
+    const handleTaskCompleted = () => {
+      console.log('Profile page: Task completed event received, refreshing data...');
       loadProfileData();
-    }
+    };
+
+    window.addEventListener('taskCompleted', handleTaskCompleted);
+
+    // Cleanup event listener
+    return () => {
+      window.removeEventListener('taskCompleted', handleTaskCompleted);
+    };
   }, [session?.user?.id]);
 
   const getInitials = (name: string) => {

@@ -11,15 +11,17 @@ const poppins = Poppins({
   weight: ["300", "400", "500", "600", "700"],
 });
 
-type Priority = 'High' | 'Medium' | 'Low';
+type Priority = 'high' | 'medium' | 'low';
 
 interface Task {
-  id: number;
-  name: string;
+  _id: string;
+  taskName: string;
   description: string;
   priority: Priority;
   dueDate: string;
-  completed: boolean;
+  completedAt?: string | Date | null;
+  earnedXp: number;
+  earnedCoins: number;
 }
 
 export default function FocusPage() {
@@ -40,7 +42,7 @@ export default function FocusPage() {
   // Task states
   const [tasks, setTasks] = useState<Task[]>([]);
   const [finishedTasks, setFinishedTasks] = useState<Task[]>([]);
-  const [taskFilter, setTaskFilter] = useState('High');
+  const [taskFilter, setTaskFilter] = useState<Priority>('high');
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
   
   // Game states
@@ -52,11 +54,60 @@ export default function FocusPage() {
   // Task form states
   const [taskName, setTaskName] = useState('');
   const [taskDescription, setTaskDescription] = useState('');
-  const [taskPriority, setTaskPriority] = useState<Priority>('Low');
+  const [taskPriority, setTaskPriority] = useState<Priority>('low');
   const [taskDueDate, setTaskDueDate] = useState('');
 
   // Audio ref for background music
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Load tasks from database
+  useEffect(() => {
+    const loadTasks = async () => {
+      try {
+        const response = await fetch('/api/tasks');
+        if (response.ok) {
+          const tasksData = await response.json();
+          console.log('Loaded tasks:', tasksData);
+          console.log('Total tasks loaded:', tasksData.length);
+          
+          // Log a few sample tasks to see their structure
+          if (tasksData.length > 0) {
+            console.log('Sample task:', tasksData[0]);
+            console.log('Sample task completedAt:', tasksData[0].completedAt);
+            console.log('Sample task completedAt type:', typeof tasksData[0].completedAt);
+          }
+          
+          const pendingTasks = tasksData.filter((task: Task) => !task.completedAt || task.completedAt === null);
+          const completedTasks = tasksData.filter((task: Task) => task.completedAt && task.completedAt !== null);
+          
+          console.log('Pending tasks:', pendingTasks.length);
+          console.log('Completed tasks:', completedTasks.length);
+          
+          // Log some completed tasks to verify
+          if (completedTasks.length > 0) {
+            console.log('Sample completed task:', completedTasks[0]);
+          }
+          
+          setTasks(pendingTasks);
+          setFinishedTasks(completedTasks);
+          
+          // Calculate total earned XP and coins from completed tasks
+          const totalEarnedXp = completedTasks.reduce((sum: number, task: Task) => sum + task.earnedXp, 0);
+          const totalEarnedCoins = completedTasks.reduce((sum: number, task: Task) => sum + task.earnedCoins, 0);
+          
+          console.log('Total earned XP:', totalEarnedXp);
+          console.log('Total earned coins:', totalEarnedCoins);
+          
+          setTotalXP(totalEarnedXp);
+          setTotalCoins(totalEarnedCoins);
+        }
+      } catch (error) {
+        console.error('Error loading tasks:', error);
+      }
+    };
+
+    loadTasks();
+  }, []);
 
   // Initialize audio
   useEffect(() => {
@@ -104,13 +155,11 @@ export default function FocusPage() {
       if (audioRef.current) {
         audioRef.current.pause();
       }
-      // Award XP and coins for completing focus session
-      const earnedXP = Math.floor(sessionDuration === '25:00' ? 25 : sessionDuration === '50:00' ? 50 : parseInt(customTime) || 25);
-      const earnedCoins = Math.floor(earnedXP / 5);
-      setSessionXP(earnedXP);
-      setSessionCoins(earnedCoins);
-      setTotalXP(prev => prev + earnedXP);
-      setTotalCoins(prev => prev + earnedCoins);
+      // Calculate duration in minutes
+      const durationMinutes = Math.floor(timeLeft / 60) || (isCustom ? parseInt(customTime) || 25 : parseInt(sessionDuration.split(':')[0]));
+      
+      // Complete focus session in database
+      completeFocusSession(durationMinutes, false);
     }
     return () => {
       if (interval) clearInterval(interval);
@@ -173,6 +222,36 @@ export default function FocusPage() {
     };
   };
 
+  const completeFocusSession = async (durationMinutes: number, surrendered: boolean) => {
+    try {
+      const response = await fetch('/api/focus-sessions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          durationMinutes,
+          surrendered,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setSessionXP(result.earnedXp);
+        setSessionCoins(result.earnedCoins);
+        setTotalXP(prev => prev + result.earnedXp);
+        setTotalCoins(prev => prev + result.earnedCoins);
+        
+        // Trigger a refresh of the Profile page data
+        refreshProfileData();
+      } else {
+        console.error('Failed to complete focus session');
+      }
+    } catch (error) {
+      console.error('Error completing focus session:', error);
+    }
+  };
+
   const surrenderSession = () => {
     setIsRunning(false);
     setShowFocusSession(false);
@@ -181,51 +260,97 @@ export default function FocusPage() {
     if (audioRef.current) {
       audioRef.current.pause();
     }
+    
+    // Calculate duration and complete session as surrendered
+    const durationMinutes = Math.floor(timeLeft / 60) || (isCustom ? parseInt(customTime) || 25 : parseInt(sessionDuration.split(':')[0]));
+    completeFocusSession(durationMinutes, true);
   };
 
-  const addTask = () => {
+  const addTask = async () => {
     if (!taskName.trim() || !taskDueDate) return;
     
-    const newTask: Task = {
-      id: Date.now(),
-      name: taskName,
-      description: taskDescription,
-      priority: taskPriority,
-      dueDate: taskDueDate,
-      completed: false
-    };
-    
-    setTasks(prev => [...prev, newTask].sort((a, b) => {
-      const priorityOrder: Record<Priority, number> = { 'High': 3, 'Medium': 2, 'Low': 1 };
-      return priorityOrder[b.priority] - priorityOrder[a.priority];
-    }));
-    
-    // Reset form
-    setTaskName('');
-    setTaskDescription('');
-    setTaskPriority('Low');
-    setTaskDueDate('');
-    setShowAddTaskModal(false);
+    try {
+      const response = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          taskName,
+          description: taskDescription,
+          priority: taskPriority,
+          dueDate: taskDueDate,
+        }),
+      });
+
+      if (response.ok) {
+        const newTask = await response.json();
+        setTasks(prev => [...prev, newTask].sort((a, b) => {
+          const priorityOrder: Record<Priority, number> = { 'high': 3, 'medium': 2, 'low': 1 };
+          return priorityOrder[b.priority as Priority] - priorityOrder[a.priority as Priority];
+        }));
+        
+        // Reset form
+        setTaskName('');
+        setTaskDescription('');
+        setTaskPriority('low');
+        setTaskDueDate('');
+        setShowAddTaskModal(false);
+      } else {
+        console.error('Failed to create task');
+      }
+    } catch (error) {
+      console.error('Error creating task:', error);
+    }
   };
 
-  const completeTask = (taskId: number) => {
-    const task = tasks.find(t => t.id === taskId);
+  const completeTask = async (taskId: string) => {
+    const task = tasks.find(t => t._id === taskId);
     if (!task) return;
     
-    setTasks(prev => prev.filter(t => t.id !== taskId));
-    setFinishedTasks(prev => [...prev, { ...task, completed: true }]);
-    
-    // Award XP and coins
-    const earnedXP = task.priority === 'High' ? 15 : task.priority === 'Medium' ? 10 : 5;
-    const earnedCoins = Math.floor(earnedXP / 3);
-    setSessionXP(earnedXP);
-    setSessionCoins(earnedCoins);
-    setTotalXP(prev => prev + earnedXP);
-    setTotalCoins(prev => prev + earnedCoins);
-    setShowCompletionModal(true);
+    try {
+      const response = await fetch('/api/tasks/complete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ taskId }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        
+        setTasks(prev => prev.filter(t => t._id !== taskId));
+        setFinishedTasks(prev => [...prev, { 
+          ...task, 
+          completedAt: new Date().toISOString(),
+          earnedXp: result.earnedXp,
+          earnedCoins: result.earnedCoins
+        }]);
+        
+        setSessionXP(result.earnedXp);
+        setSessionCoins(result.earnedCoins);
+        setTotalXP(prev => prev + result.earnedXp);
+        setTotalCoins(prev => prev + result.earnedCoins);
+        setShowCompletionModal(true);
+        
+        // Trigger a refresh of the Profile page data
+        refreshProfileData();
+      } else {
+        console.error('Failed to complete task');
+      }
+    } catch (error) {
+      console.error('Error completing task:', error);
+    }
   };
 
-  const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
+  // Function to refresh Profile page data
+  const refreshProfileData = () => {
+    // Dispatch a custom event that the Profile page can listen to
+    window.dispatchEvent(new CustomEvent('taskCompleted'));
+  };
+
+  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
 
   const handleDragStart = (e: React.DragEvent, task: Task) => {
     setDraggedTask(task);
@@ -245,7 +370,7 @@ export default function FocusPage() {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     if (draggedTask) {
-      completeTask(draggedTask.id);
+      completeTask(draggedTask._id);
       setDraggedTask(null);
     }
     setIsDragging(false)
@@ -253,9 +378,9 @@ export default function FocusPage() {
 
   const getPriorityColor = (priority: Priority): string => {
     switch (priority) {
-      case 'High': return 'bg-[#245329]';
-      case 'Medium': return 'bg-[#669524]';
-      case 'Low': return 'bg-[#B1E064]';
+      case 'high': return 'bg-[#245329]';
+      case 'medium': return 'bg-[#669524]';
+      case 'low': return 'bg-[#B1E064]';
       default: return 'bg-green-400';
     }
   };
@@ -396,31 +521,31 @@ export default function FocusPage() {
                 </button>
               </div>
               <div className="flex w-full gap-2 mb-3">
-                {['High', 'Medium', 'Low'].map(filter => (
+                {(['high', 'medium', 'low'] as Priority[]).map(filter => (
                   <button 
                     key={filter}
                     className={`flex-1 py-1 text-xs lg:py-2 rounded-lg font-semibold transition-colors cursor-pointer ${
                       taskFilter === filter 
-                        ? getPriorityColor(filter as Priority) + ' text-white' 
+                        ? getPriorityColor(filter) + ' text-white' 
                         : 'bg-[#AFB846] text-gray-700 hover:scale-105 transition-transform duration-300 ease-in-out'
                     }`}
                     onClick={() => setTaskFilter(filter)}
                   >
-                    {filter}
+                    {filter.charAt(0).toUpperCase() + filter.slice(1)}
                   </button>
                 ))}
               </div>
 
               <div className="flex flex-col gap-3 flex-1 overflow-y-auto">
                 {getFilteredTasks().map(task => {
-                  const isExpanded = expandedTaskId === task.id;
+                  const isExpanded = expandedTaskId === task._id;
 
                   return (
                     <div 
-                      key={task.id}
+                      key={task._id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, task)}
-                      onClick={() => setExpandedTaskId(prev => (prev === task.id ? null : task.id))}
+                      onClick={() => setExpandedTaskId(prev => (prev === task._id ? null : task._id))}
                       className="bg-white rounded-lg px-4 py-2 border-2 border-gray-200 cursor-pointer hover:shadow-md transition-shadow max-w-[260] lg:max-w-[390px]"
                     >
                       <div className="flex items-center gap-3">
@@ -429,12 +554,12 @@ export default function FocusPage() {
                           className="w-4 h-4 text-green-600 bg-white border-2 border-gray-300 rounded focus:ring-green-500"
                           onClick={(e) => {
                             e.stopPropagation();
-                            completeTask(task.id);
+                            completeTask(task._id);
                           }}
                         />
                         <div className="flex-1">
-                          <div className="font-semibold text-xs lg:text-lg text-green-800">{task.name}</div>
-                          <div className="text-[8px] lg:text-[10px] text-gray-500">Due: {task.dueDate}</div>
+                          <div className="font-semibold text-xs lg:text-lg text-green-800">{task.taskName}</div>
+                          <div className="text-[8px] lg:text-[10px] text-gray-500">Due: {new Date(task.dueDate).toLocaleDateString()}</div>
                         </div>
                       </div>
 
@@ -449,7 +574,7 @@ export default function FocusPage() {
 
                 {getFilteredTasks().length === 0 && (
                   <div className="text-center text-[#AFB846] py-8 flex flex-col items-center justify-center gap-2">
-                    <span>No {taskFilter.toLowerCase()} priority tasks</span>
+                    <span>No {taskFilter} priority tasks</span>
                     <MdOutlineAddTask size={200} className="text-[#AFB846]" />
                   </div>
                 )}
@@ -513,9 +638,9 @@ export default function FocusPage() {
                       onChange={(e) => setTaskPriority(e.target.value as Priority)}
                       className="w-full rounded-md border-2 border-[#AFB846] px-2 py-1 lg:px-4 lg:py-2 bg-white text-xs lg:text-lg text-[#245329] font-normal focus:outline-none focus:ring-2 focus:ring-[#AFB846]"
                     >
-                      <option value="Low">Low</option>
-                      <option value="Medium">Medium</option>
-                      <option value="High">High</option>
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
                     </select>
                   </div>
                   <div className="flex-1">

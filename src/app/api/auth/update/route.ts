@@ -55,7 +55,7 @@ export async function PUT(req: NextRequest) {
       message: 'Profile updated successfully',
       user: {
         id: user._id,
-        name: user.username,
+        username: user.username,
         email: user.email,
       },
     });
