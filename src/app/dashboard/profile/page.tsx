@@ -1,42 +1,47 @@
 'use client'
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import ProfileStatCard from '../../../components/profile-page/ProfileStatCard';
 import { ImCamera } from "react-icons/im";
-
-const stats = [
-  { title: 'Total Focus Time', value: '1h 50m', highlight: true },
-  { title: 'Tasks Completed', value: 159 },
-  { title: 'Plants Collected', value: 12 },
-  { title: 'Total Coins Earned', value: 1034 },
-  { title: 'Longest Streak', value: '1h' },
-];
 
 const ProfilePage = () => {
   const { data: session } = useSession();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [profileStats, setProfileStats] = useState<{
+    totalFocusTime: string;
+    tasksCompleted: number;
+    plantsCollected: number;
+    totalCoinsEarned: number;
+    longestStreak: number;
+    username: string;
+  } | null>(null);
 
-  // Load existing profile image on component mount
-  React.useEffect(() => {
-    const loadProfileImage = async () => {
+  // Fetch profile stats and image
+  useEffect(() => {
+    const loadProfileData = async () => {
       try {
         const response = await fetch('/api/profile');
         if (response.ok) {
           const data = await response.json();
-          if (data.profilePictureUrl) {
-            setProfileImage(data.profilePictureUrl);
-          }
+          setProfileImage(data.profilePictureUrl);
+          setProfileStats({
+            totalFocusTime: data.totalFocusTime,
+            tasksCompleted: data.tasksCompleted,
+            plantsCollected: data.plantsCollected,
+            totalCoinsEarned: data.totalCoinsEarned,
+            longestStreak: data.longestStreak,
+            username: data.username,
+          });
         }
       } catch (error) {
-        console.error('Failed to load profile image:', error);
+        console.error('Failed to load profile data:', error);
       }
     };
-
     if (session?.user?.id) {
-      loadProfileImage();
+      loadProfileData();
     }
   }, [session?.user?.id]);
 
@@ -250,9 +255,15 @@ const ProfilePage = () => {
 
         {/* Stats Cards */}
         <div className="flex gap-6 sm:gap-8 md:gap-10 lg:gap-12 mt-8 sm:mt-10 md:mt-12 justify-center flex-wrap px-6 sm:px-8 md:px-10 lg:px-12">
-          {stats.map((stat, idx) => (
-            <ProfileStatCard key={idx} title={stat.title} value={stat.value} highlight={stat.highlight} />
-          ))}
+          {profileStats && (
+            <>
+              <ProfileStatCard title="Total Focus Time" value={profileStats.totalFocusTime} highlight />
+              <ProfileStatCard title="Tasks Completed" value={profileStats.tasksCompleted} />
+              <ProfileStatCard title="Plants Collected" value={profileStats.plantsCollected} />
+              <ProfileStatCard title="Total Coins Earned" value={profileStats.totalCoinsEarned} />
+              <ProfileStatCard title="Longest Streak" value={profileStats.longestStreak} />
+            </>
+          )}
         </div>
       </div>
 
