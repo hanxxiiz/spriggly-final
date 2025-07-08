@@ -41,12 +41,7 @@ const ProfilePage = () => {
   }, [session?.user?.id]);
 
   const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
+    return name && name.length > 0 ? name[0].toUpperCase() : '';
   };
 
   const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -216,7 +211,7 @@ const ProfilePage = () => {
                   <img 
                     src={profileImage} 
                     alt="Profile" 
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover rounded-full"
                   />
                 ) : (
                   <span className="text-white">{getInitials(username)}</span>
