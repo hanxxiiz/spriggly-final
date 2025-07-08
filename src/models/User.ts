@@ -20,6 +20,7 @@ interface IUser extends Document {
   currentPlantIds: mongoose.Types.ObjectId[];
   lastClaimedDate: Date;
   dailyStreakDay: number;
+  claimedDays: string[];
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -103,6 +104,10 @@ const userSchema = new mongoose.Schema<IUser>({
   dailyStreakDay: {
     type: Number,
     default: 0,
+  },
+  claimedDays: {
+    type: [String],
+    default: [],
   },
 }, {
   collection: 'Users', // Specify the correct collection name
