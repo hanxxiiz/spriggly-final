@@ -18,7 +18,11 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
   read = false,
 }) => (
   <div
-    className={`flex items-start gap-3 border border-gray-200 rounded-lg p-4 mt-4 first:mt-6 shadow-sm ${read ? 'opacity-60' : ''}`}
+    className={`flex items-start gap-3 border rounded-lg p-4 mt-4 first:mt-6 shadow-sm transition-all duration-200
+      ${read
+        ? 'border-gray-200 bg-white opacity-60'
+        : 'border-lime-400 bg-lime-50 ring-2 ring-lime-200'}
+    `}
   >
     <div className={`w-8 h-8 rounded ${color} flex items-center justify-center text-white text-xl`}>
       {icon}

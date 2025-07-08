@@ -22,8 +22,13 @@ const NotificationsPage = () => {
   }, []);
 
   const markAllAsRead = async () => {
-    // Optionally, implement a PATCH/PUT request to mark all as read in the DB
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    await fetch('/api/notifications', { method: 'PATCH' });
+    // Refetch notifications from the backend to get the updated isRead values
+    const response = await fetch('/api/notifications');
+    if (response.ok) {
+      const data = await response.json();
+      setNotifications(data.notifications || []);
+    }
   };
 
   return (
@@ -57,12 +62,12 @@ const NotificationsPage = () => {
             {notifications.map((notif) => (
               <NotificationCard
                 key={notif._id}
-                type={notif.type}
-                message={notif.message}
+                type={notif.type || 'Notification'}
+                message={notif.message || notif.title || 'No message'}
                 time={new Date(notif.createdAt).toLocaleString()}
-                icon={notif.icon}
-                color={notif.color}
-                read={notif.read}
+                icon="🔔"
+                color="bg-green-500"
+                read={notif.isRead}
               />
             ))}
             {/* Empty notification cards for design, if needed */}

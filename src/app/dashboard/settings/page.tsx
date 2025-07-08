@@ -92,6 +92,8 @@ export default function SettingsPage() {
         // You might want to refresh the session here
         // For now, we'll just show success message
       }
+      // Dispatch event so other pages can refresh profile
+      window.dispatchEvent(new CustomEvent('profileUpdated'));
 
     } catch (error: any) {
       setMessage(error.message || 'An error occurred while updating profile');
