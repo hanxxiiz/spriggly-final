@@ -1,22 +1,55 @@
 'use client'
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import ProfileStatCard from '../../../components/profile-page/ProfileStatCard';
 import { ImCamera } from "react-icons/im";
 
-const stats = [
-  { title: 'Total Focus Time', value: '1h 50m', highlight: true },
-  { title: 'Tasks Completed', value: 159 },
-  { title: 'Plants Collected', value: 12 },
-  { title: 'Total Coins Earned', value: 1034 },
-  { title: 'Longest Streak', value: '1h' },
-];
+interface UserStats {
+  username: string;
+  totalFocusTime: string;
+  tasksCompleted: number;
+  plantsCollected: number;
+  totalCoinsEarned: number;
+  longestStreak: number;
+}
 
 const ProfilePage = () => {
   const { data: session } = useSession();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUserStats = async () => {
+      if (session?.user?.id) {
+        try {
+          console.log('Profile page: Fetching user stats for user ID:', session.user.id);
+          const response = await fetch('/api/profile');
+          console.log('Profile page: Response status:', response.status);
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log('Profile page: Received data:', data);
+            setUserStats(data);
+          } else {
+            const errorData = await response.json();
+            console.error('Profile page: Failed to fetch user stats:', errorData);
+          }
+        } catch (error) {
+          console.error('Profile page: Error fetching user stats:', error);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        console.log('Profile page: No session or user ID available');
+        setLoading(false);
+      }
+    };
+
+    fetchUserStats();
+  }, [session?.user?.id]);
 
   const getInitials = (name: string) => {
     return name
@@ -38,8 +71,17 @@ const ProfilePage = () => {
     }
   };
 
-  const username = session?.user?.name || 'User';
+  const username = userStats?.username || session?.user?.name || 'User';
   const displayName = username;
+
+  // Default stats while loading or if data is not available
+  const stats = [
+    { title: 'Total Focus Time', value: userStats?.totalFocusTime || '0h0m', highlight: true },
+    { title: 'Tasks Completed', value: userStats?.tasksCompleted || 0 },
+    { title: 'Plants Collected', value: userStats?.plantsCollected || 0 },
+    { title: 'Total Coins Earned', value: userStats?.totalCoinsEarned || 0 },
+    { title: 'Longest Streak', value: userStats?.longestStreak || 0 },
+  ];
 
   return (
     <div className="bg-white min-h-screen w-full flex">

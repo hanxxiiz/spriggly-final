@@ -31,15 +31,39 @@ export async function POST(req: Request) {
       }
     }
 
-    // Create new user with correct field names
+    // Create new user with all fields initialized to proper defaults
     const user = await User.create({
       username: name, // Map 'name' from form to 'username' in database
       email,
       hashedPassword: password, // Map 'password' from form to 'hashedPassword' in database
+      // Initialize all numeric fields to 0
+      level: 1,
+      userCurrentXp: 0,
+      currentStreak: 0,
+      longestStreak: 0,
+      currentCoins: 0,
+      totalCoinsEarned: 0,
+      totalCoinsSpent: 0,
+      totalFocusHours: 0,
+      tasksCompleted: 0,
+      totalPlantsCollected: 0,
+      profilePictureUrl: '',
+      currentPlantIds: [],
+      lastClaimedDate: new Date(),
+      dailyStreakDay: 0,
     });
 
     return NextResponse.json(
-      { message: 'User created successfully', user: { id: user._id, username: user.username, email: user.email } },
+      { 
+        message: 'User created successfully', 
+        user: { 
+          id: user._id, 
+          username: user.username, 
+          email: user.email,
+          level: user.level,
+          currentCoins: user.currentCoins
+        } 
+      },
       { status: 201 }
     );
   } catch (error: any) {

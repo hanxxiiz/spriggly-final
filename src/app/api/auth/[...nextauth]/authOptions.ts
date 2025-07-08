@@ -58,9 +58,10 @@ export const authOptions = {
       },
     }),
   ],
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || "your-secret-key-here",
   session: {
     strategy: "jwt" as SessionStrategy,
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
     signIn: "/auth/login",
@@ -69,16 +70,25 @@ export const authOptions = {
     async jwt({ token, user }: { token: any; user?: any }) {
       if (user) {
         token.id = (user as any).id;
+        token.email = user.email;
+        token.name = user.name;
       }
       return token;
     },
     async session({ session, token }: { session: any; token: any }) {
       if (token && session.user) {
         session.user.id = token.id;
+        session.user.email = token.email;
+        session.user.name = token.name;
       } else if (token) {
-        session.user = { id: token.id };
+        session.user = { 
+          id: token.id,
+          email: token.email,
+          name: token.name
+        };
       }
       return session;
     },
   },
+  debug: process.env.NODE_ENV === 'development',
 }; 

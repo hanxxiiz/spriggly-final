@@ -24,11 +24,26 @@ export async function POST(req: Request) {
       );
     }
 
-    // Create new user with correct field names
+    // Create new user with all fields initialized to proper defaults
     const user = await User.create({
       username: name,
       email,
       hashedPassword: password,
+      // Initialize all numeric fields to 0
+      level: 1,
+      userCurrentXp: 0,
+      currentStreak: 0,
+      longestStreak: 0,
+      currentCoins: 0,
+      totalCoinsEarned: 0,
+      totalCoinsSpent: 0,
+      totalFocusHours: 0,
+      tasksCompleted: 0,
+      totalPlantsCollected: 0,
+      profilePictureUrl: '',
+      currentPlantIds: [],
+      lastClaimedDate: new Date(),
+      dailyStreakDay: 0,
     });
 
     return NextResponse.json({
@@ -38,7 +53,9 @@ export async function POST(req: Request) {
         username: user.username,
         email: user.email,
         level: user.level,
-        currentCoins: user.currentCoins
+        currentCoins: user.currentCoins,
+        userCurrentXp: user.userCurrentXp,
+        currentStreak: user.currentStreak
       }
     });
   } catch (error: any) {
