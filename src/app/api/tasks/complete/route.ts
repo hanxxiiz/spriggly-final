@@ -4,6 +4,7 @@ import { authOptions } from '../../auth/[...nextauth]/authOptions';
 import connectDB from '@/lib/mongodb';
 import Task from '@/models/Task';
 import User from '@/models/User';
+import Notification from '@/models/Notification';
 
 // POST - Complete a task
 export async function POST(request: NextRequest) {
@@ -79,6 +80,16 @@ export async function POST(request: NextRequest) {
       user.tasksCompleted += 1;
       await user.save();
     }
+
+    // Create a notification for the user
+    await Notification.create({
+      userId: session.user.id,
+      type: 'task',
+      title: 'Task Completed!',
+      message: `You completed: ${task.taskName}`,
+      isRead: false,
+      createdAt: new Date(),
+    });
 
     console.log('Complete Task API: Task completed:', {
       taskId,
