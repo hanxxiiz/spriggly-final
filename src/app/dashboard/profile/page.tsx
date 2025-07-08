@@ -41,12 +41,12 @@ const ProfilePage = () => {
       }
     };
 
-    fetchUserStats();
+    loadProfileData();
 
     // Listen for task completion events from Focus page
     const handleTaskCompleted = () => {
       console.log('Profile page: Task completed event received, refreshing data...');
-      fetchUserStats();
+      loadProfileData();
     };
 
     window.addEventListener('taskCompleted', handleTaskCompleted);
