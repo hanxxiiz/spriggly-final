@@ -24,8 +24,8 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    if (name && name !== user.name) {
-      user.name = name;
+    if (name && name !== user.username) {
+      user.username = name;
     }
 
     if (email && email !== user.email) {
@@ -55,7 +55,7 @@ export async function PUT(req: NextRequest) {
       message: 'Profile updated successfully',
       user: {
         id: user._id,
-        name: user.name,
+        name: user.username,
         email: user.email,
       },
     });
