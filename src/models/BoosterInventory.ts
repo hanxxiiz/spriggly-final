@@ -22,7 +22,7 @@ const BoosterInventorySchema = new mongoose.Schema<IBoosterInventory>({
     required: true,
     default: 0,
   },
-});
+}, { collection: 'BoosterInventory' }); // Use capitalized, singular collection name
 
 const BoosterInventory: Model<IBoosterInventory> = mongoose.models.BoosterInventory || mongoose.model<IBoosterInventory>('BoosterInventory', BoosterInventorySchema);
 export default BoosterInventory; 

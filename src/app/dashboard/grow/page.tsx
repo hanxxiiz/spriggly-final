@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import GrowInventoryPanel from '@/components/grow/GrowInventoryPanel';
 import LevelBar from '@/components/grow/LevelBar';
 import NotificationCard from '@/components/NotificationCard';
-
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useDrop } from 'react-dnd';
@@ -13,105 +12,52 @@ import { IoIosNotifications } from "react-icons/io";
 import { IoReturnUpBackSharp } from "react-icons/io5";
 import { FaPlay } from "react-icons/fa";
 import { MdInventory } from "react-icons/md";
+import { useSession } from "next-auth/react";
+import Link from 'next/link';
 
 const CARDS_PER_PAGE = 4;
 
-const splinePlants = [
-  {
-    plantName: 'Bamboo',
-    description: 'Leche flan leche flan leche flan leche flan leche flan.',
-    locked: false,
-    level: 5,
-    sceneUrl: 'https://prod.spline.design/IpCgeeJ6P90fLahm/scene.splinecode',
-  },
-  {
-    plantName: 'Bulak',
-    description: 'Sampaguita is blahblahblahblah jasoisdjasdojasdojasdojasdojasdjasdjasjd.',
-    locked: false,
-    level: 5,
-    sceneUrl: 'https://prod.spline.design/7400UXKffZI7SomF/scene.splinecode'
-  },
-  {
-    plantName: 'Wild Cactus',
-    description: 'HELL YEAHHHHHH',
-    locked: false,
-    level: 5,
-    sceneUrl: 'https://prod.spline.design/5M0Y5knIgZ4jDtlJ/scene.splinecode',
-  },
-  {
-    plantName: 'Spooky Pumpkin',
-    description: 'HELL YEAHHH BABYYYYY',
-    locked: false,
-    level: 5,
-    sceneUrl: 'https://prod.spline.design/14E85RrSyiU8AVlp/scene.splinecode',
-  },
-];
-
-const inventoryBoosters = [
-  {
-    id: 'b1',
-    name: 'Misting Bottle',
-    effect: 'add10Xp',
-    quantity: 2,
-    image: '/booster-icons/misting-bottle.png', // ✅
-  },
-  {
-    id: 'b2',
-    name: 'Fertilizer',
-    effect: 'add50Xp',
-    quantity: 1,
-    image: '/booster-icons/fertilizer.png', // ✅
-  },
-];
-
-const inventorySeedPack = [
-  { id: 1, name: 'Seed A', quantity: 2 },
-  { id: 2, name: 'Seed B', quantity: 1 },
-  { id: 3, name: 'Seed C', quantity: 3 },
-  { id: 4, name: 'Seed D', quantity: 1 },
-  { id: 5, name: 'Seed E', quantity: 2 },
-  { id: 6, name: 'Seed F', quantity: 1 },
-  { id: 7, name: 'Seed G', quantity: 1 },
-  { id: 8, name: 'Seed H', quantity: 2 },
-  { id: 9, name: 'Seed I', quantity: 3 },
-  { id: 10, name: 'Seed J', quantity: 1 },
-  { id: 11, name: 'Seed K', quantity: 2 },
-  { id: 12, name: 'Seed L', quantity: 1 },
-  { id: 13, name: 'Seed M', quantity: 1 },
-  { id: 14, name: 'Seed N', quantity: 3 },
-  { id: 15, name: 'Seed O', quantity: 2 },
-];
+// Utility to number duplicate plant names
+function addPlantNumbers(plants: any[]): any[] {
+  const nameCount: Record<string, number> = {};
+  return plants.map((plant: any) => {
+    const baseName = plant.template?.name || plant.plantName || 'Unknown';
+    nameCount[baseName] = (nameCount[baseName] || 0) + 1;
+    return {
+      ...plant,
+      displayName: `${baseName} ${nameCount[baseName]}`,
+    };
+  });
+}
 
 function GrowSplineViewer({
   plant,
   onUsePlant,
   onUseBooster,
-  onSeedPackDrop, // ✅ Add this properly
+  onSeedPackDrop,
 }: {
-  plant: typeof splinePlants[0],
+  plant: any,
   onUsePlant: (plantId: string | number) => void,
   onUseBooster: (boosterId: string | number) => void,
-  onSeedPackDrop: (item: { id: string | number; name: string }) => void // ✅ Add this line
+  onSeedPackDrop: (item: { id: string | number; name: string }) => void
 }) {
-
-
   const splineRef = React.useRef<any>(null);
-  const [currentStage, setCurrentStage] = React.useState(plant.level);
+  const [currentStage, setCurrentStage] = React.useState<number>(plant.plantLevel || 1);
+  const [loaded, setLoaded] = React.useState(false);
+
+  // Always use the correct sceneUrl from template if available
+  const sceneUrl = plant.template?.sceneUrl || plant.template?.modelUrl || plant.sceneUrl || '';
 
   const [{ isOver, canDrop }, drop] = useDrop(() => ({
     accept: ['plant', 'booster'],
-
-  drop: (item: { id: string | number; name: string; type?: string }) => {
-  if (item.type === 'booster') {
-    onUseBooster(item.id); // ✅ boosters only trigger logic
-  } else {
-    onUsePlant(item.id);    
-    onSeedPackDrop(item);   // ✅ this only runs for seed packs
-  }
-},
-
-
-
+    drop: (item: any) => {
+      if (item.type === 'booster') {
+        onUseBooster(item.id);
+      } else {
+        onUsePlant(item.id);
+        onSeedPackDrop(item as { id: string | number; name: string });
+      }
+    },
     collect: (monitor) => ({
       isOver: monitor.isOver(),
       canDrop: monitor.canDrop(),
@@ -119,155 +65,194 @@ function GrowSplineViewer({
   }), [onUsePlant]);
 
   React.useEffect(() => {
-    setCurrentStage(plant.level);
-  }, [plant.level, plant.sceneUrl]);
+    setCurrentStage(plant.plantLevel || 1);
+  }, [plant.plantLevel, sceneUrl]);
 
   const handleSplineLoad = (splineApp: any) => {
     splineRef.current = splineApp;
-    updateStageVisibility(plant.level);
+    setLoaded(true);
   };
 
   React.useEffect(() => {
-    if (!splineRef.current) return;
-    updateStageVisibility(currentStage);
-  }, [currentStage]);
+    if (!loaded || !splineRef.current) return;
+    updateStageVisibility(plant.plantLevel || 1);
+  }, [plant.plantLevel, loaded]);
 
   const updateStageVisibility = (activeStage: number) => {
     for (let i = 1; i <= 5; i++) {
-      const obj = splineRef.current.findObjectByName(`stage_${i}`);
+      const obj = splineRef.current?.findObjectByName?.(`stage_${i}`);
       if (obj) {
         const shouldBeVisible = i === activeStage;
         obj.visible = shouldBeVisible;
-        obj.children?.forEach((child: any) => (child.visible = shouldBeVisible));
-        obj.parent?.updateMatrixWorld(true);
+        if (obj.children) obj.children.forEach((child: any) => (child.visible = shouldBeVisible));
+        if (obj.parent) obj.parent.updateMatrixWorld(true);
+      } else {
+        // Warn if a stage object is missing in the Spline scene
+        if (i === activeStage) {
+          // Only warn for the current stage to avoid spam
+          // eslint-disable-next-line no-console
+          console.warn(`Spline: stage_${i} not found in scene for plant level ${activeStage}`);
+        }
       }
     }
-    if (splineRef.current.scene) {
+    if (splineRef.current?.scene) {
       splineRef.current.scene.updateMatrixWorld(true);
     }
   };
 
-  return (
-  <div
-    ref={drop as unknown as React.Ref<HTMLDivElement>}
-    className={`
-      mt-4 w-full max-w-[650px] h-[380px] sm:h-[400px] md:h-[420px] lg:w-[650px] lg:h-[540px]
-      bg-[#6B6464] rounded-xl flex items-center justify-center 
-      relative overflow-hidden transition-colors duration-200 
-      border-[#5a5353] // 🔁 Always keep the base border
-    `}
-  >
-    <div className="w-full h-full">
-      <Spline scene={plant.sceneUrl} onLoad={handleSplineLoad} className="w-full h-full" />
+  // Log missing sceneUrl for debugging
+  React.useEffect(() => {
+    if (!sceneUrl) {
+      if (plant && Object.keys(plant).length > 0) {
+        // eslint-disable-next-line no-console
+        console.warn('Missing sceneUrl for plant:', plant);
+      }
+    }
+  }, [plant, sceneUrl]);
 
-      {/* 💥 Force canvas to fill height */}
-      <style jsx global>{`
-        canvas {
-          width: 100% !important;
-          height: 100% !important;
-          display: block !important;
-          position: relative !important;
-        }
-      `}</style>
+  return (
+    <div
+      ref={drop as unknown as React.Ref<HTMLDivElement>}
+      className={`mt-4 w-full max-w-[650px] h-[380px] sm:h-[400px] md:h-[420px] lg:w-[650px] lg:h-[540px] bg-white rounded-xl flex items-center justify-center relative overflow-hidden transition-colors duration-200 border-[#5a5353]`}
+    >
+      <div className="w-full h-full">
+        <div className="absolute inset-0 w-full h-full">
+          {sceneUrl && sceneUrl.endsWith('.splinecode') ? (
+            <Spline scene={sceneUrl} onLoad={handleSplineLoad} className="w-full h-full" />
+          ) : (
+            <div className="flex items-center justify-center w-full h-full text-gray-300">
+              No 3D preview available
+            </div>
+          )}
+        </div>
+        <style jsx global>{`
+          canvas {
+            width: 100% !important;
+            height: 100% !important;
+            display: block !important;
+            position: relative !important;
+          }
+        `}</style>
+      </div>
     </div>
-  </div>
-);
+  );
 }
 
 export default function GrowPage() {
-  const [selectedPlantIdx, setSelectedPlantIdx] = useState(0);
-const [plantsState, setPlantsState] = useState([...inventorySeedPack, ...inventoryBoosters]);
+  const { data: session, status } = useSession();
+  const [selectedPlantIdx, setSelectedPlantIdx] = useState<number>(0);
+  const [userPlants, setUserPlants] = useState<any[]>([]);
+  const [seedInventory, setSeedInventory] = useState<any[]>([]);
+  const [boosterInventory, setBoosterInventory] = useState<any[]>([]);
   const [showInventory, setShowInventory] = useState(true);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [notifExitAnim, setNotifExitAnim] = useState(false);
-  const [selectedSeedPack, setSelectedSeedPack] = useState<{ id: string | number; name: string } | null>(null);
-const [usedBooster, setUsedBooster] = useState<{ id: string | number; name: string } | null>(null);
+  const [selectedSeedPack, setSelectedSeedPack] = useState<any>(null);
+  const [usedBooster, setUsedBooster] = useState<any>(null);
+  const [pendingSeed, setPendingSeed] = useState<any>(null); // For confirmation modal
+  const [planting, setPlanting] = useState(false);
 
-  const [notifications, setNotifications] = useState([
-    {
-      type: 'Reward',
-      message: 'You earned 10 XP from focus time!',
-      time: '2 minutes ago',
-      icon: '🌱',
-      color: 'bg-green-500',
-      read: false,
-    },
-    {
-      type: 'Reminder',
-      message: "Don't forget to check your plant today!",
-      time: '1 hour ago',
-      icon: '⏰',
-      color: 'bg-yellow-500',
-      read: false,
-    },
-    {
-      type: 'System',
-      message: 'New plant species added to the shop!',
-      time: 'Yesterday',
-      icon: '🛒',
-      color: 'bg-blue-500',
-      read: true,
-    },
-  ]);
+  // Fetch grow data when session is ready and userId is available
+  useEffect(() => {
+    if (status === "loading") return; // Wait for session to load
+    const userId = session?.user?.id;
+    if (!userId) return;
+    fetch(`/api/grow/user-data?userId=${userId}`)
+      .then(res => res.json())
+      .then(data => {
+        setUserPlants(data.userPlants || []);
+        setSeedInventory(data.seedInventory || []);
+        setBoosterInventory(data.boosterInventory || []);
+      });
+  }, [session, status]);
 
-  const unreadCount = notifications.filter(n => !n.read).length;
-  const plant = splinePlants[selectedPlantIdx];
+  // Numbered plant names for display
+  const numberedPlants = addPlantNumbers(userPlants);
+  const plant = numberedPlants[selectedPlantIdx] || {};
 
-  const handlePrevPlant = () => setSelectedPlantIdx((idx) => Math.max(0, idx - 1));
-  const handleNextPlant = () => setSelectedPlantIdx((idx) => Math.min(splinePlants.length - 1, idx + 1));
+  // Inventory panel expects items (seeds) and boosters
+  const inventorySeeds: any[] = seedInventory.map((seed: any) => ({
+    ...seed,
+    id: seed._id || seed.plantTemplateId,
+    name: seed.template?.name || 'Unknown',
+    image: seed.template?.imageUrl,
+    quantity: seed.quantity,
+  }));
+  const inventoryBoosters: any[] = boosterInventory.map((booster: any) => ({
+    id: booster.boosterTemplateId, // Use boosterTemplateId for backend
+    name: booster.template?.name || 'Unknown',
+    image: booster.template?.itemImageUrl,
+    quantity: booster.quantity,
+    effect: booster.template?.effectType,
+  }));
 
-  const handleUsePlant = (plantId: string | number) => {
-    setPlantsState((prev) => {
-      const idx = prev.findIndex((p) => String(p.id) === String(plantId));
-      if (idx === -1) return prev;
-      const updated = [...prev];
-      if (updated[idx].quantity && updated[idx].quantity > 1) {
-        updated[idx] = { ...updated[idx], quantity: (updated[idx].quantity || 1) - 1 };
-      } else {
-        updated.splice(idx, 1);
-      }
-      return updated;
+  // Inventory actions
+  const handleUseBooster = async (boosterId: any) => {
+    const userId = session?.user?.id;
+    const plantId = numberedPlants[selectedPlantIdx]?._id;
+    if (!plantId) return;
+    const res = await fetch('/api/grow/use-booster', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, plantId, boosterId }),
     });
+    const data = await res.json();
+    if (data.plant) {
+      // Update plant in state with a new object reference
+      setUserPlants((prev: any[]) => prev.map((p: any) => p._id === data.plant._id ? { ...data.plant } : p));
+    }
+    if (data.boosterInventory) {
+      setBoosterInventory(data.boosterInventory);
+    }
+    setUsedBooster(inventoryBoosters.find(b => b.id === boosterId));
   };
-const handleUseBooster = (boosterId: string | number) => {
-  setPlantsState((prev) => {
-    const idx = prev.findIndex((p) => String(p.id) === String(boosterId));
-    if (idx === -1) return prev;
 
-    const updated = [...prev];
-    if (updated[idx].quantity && updated[idx].quantity > 1) {
-      updated[idx] = { ...updated[idx], quantity: updated[idx].quantity! - 1 };
-    } else {
-      updated.splice(idx, 1);
+  // Plant a seed by click or drag-drop
+  const handlePlantSeed = async (seed: any) => {
+    if (planting) return; // Prevent double-planting
+    setPlanting(true);
+    const userId = session?.user?.id;
+    // Robustly extract plantTemplateId as a string
+    const plantTemplateId =
+      seed.plantTemplateId
+        ? String(seed.plantTemplateId)
+        : seed.template?._id
+          ? String(seed.template._id)
+          : undefined;
+    if (!userId || !plantTemplateId) {
+      setPlanting(false);
+      return;
     }
-
-    // TODO: Trigger XP gain or animation here
-    console.log(`Booster ${boosterId} used!`);
-
-    return updated;
-  });
-};
-const handleBoosterClick = (item: { id: string | number; name: string }) => {
-  handleUseBooster(item.id);
-  setUsedBooster(item); // ✅ Trigger modal
-};
-
-  const handleSeedPackClick = (item: { id: string | number; name: string }) => {
-  setSelectedSeedPack(item);
-
-  setPlantsState((prev) => {
-    const idx = prev.findIndex((p) => String(p.id) === String(item.id));
-    if (idx === -1) return prev;
-
-    const updated = [...prev];
-    if (updated[idx].quantity && updated[idx].quantity > 1) {
-      updated[idx] = { ...updated[idx], quantity: updated[idx].quantity! - 1 };
-    } else {
-      updated.splice(idx, 1);
+    try {
+      const res = await fetch('/api/grow/plant-seed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, plantTemplateId }),
+      });
+      const data = await res.json();
+      if (data.userPlants) setUserPlants(data.userPlants);
+      if (data.seedInventory) setSeedInventory(data.seedInventory);
+      // Auto-select the new plant (last in array)
+      if (data.userPlants && data.userPlants.length > 0) {
+        setSelectedPlantIdx(data.userPlants.length - 1);
+      }
+      setSelectedSeedPack(seed); // Show modal
+      setShowInventory(false); // On mobile, close inventory
+    } finally {
+      setPlanting(false);
     }
-    return updated;
-  });
-};
+  };
+
+  // Remove confirmation modal logic (pendingSeed, confirmPlantSeed, cancelPlantSeed)
+
+  const handlePrevPlant = () => setSelectedPlantIdx(idx => Math.max(0, idx - 1));
+  const handleNextPlant = () => setSelectedPlantIdx(idx => Math.min(numberedPlants.length - 1, idx + 1));
+
+  // Auto-dismiss the success modal after 1.5s
+  useEffect(() => {
+    if (selectedSeedPack) {
+      const timer = setTimeout(() => setSelectedSeedPack(null), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedSeedPack]);
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -276,21 +261,9 @@ const handleBoosterClick = (item: { id: string | number; name: string }) => {
           {/* Sidebar */}
           {/* Mobile Bottom Bar */}
 <div className="fixed bottom-0 left-0 w-full z-30 bg-[#5a5353] px-4 py-2 flex justify-center gap-4 shadow-md lg:hidden">
-  <button className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow">
+  <Link href="/" className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow">
     <IoReturnUpBackSharp className="text-[#222] text-xl" />
-  </button>
-
-  <button
-    onClick={() => setShowNotifications(true)}
-    className="relative w-12 h-12 rounded-full bg-white flex items-center justify-center shadow"
-  >
-    <IoIosNotifications className="text-[#222] text-xl" />
-    {unreadCount > 0 && (
-      <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center animate-pulse">
-        {unreadCount}
-      </span>
-    )}
-  </button>
+  </Link>
 
   <button
     onClick={() => setShowInventory((prev) => !prev)}
@@ -302,21 +275,9 @@ const handleBoosterClick = (item: { id: string | number; name: string }) => {
 
 {/* Desktop Sidebar */}
 <div className="hidden lg:flex flex-col items-center pt-8 px-4">
-  <button className="w-14 h-14 rounded-full bg-white flex items-center justify-center mb-4 shadow">
+  <Link href="/dashboard" className="w-14 h-14 rounded-full bg-white flex items-center justify-center mb-4 shadow">
     <IoReturnUpBackSharp className="text-[#222] text-2xl" />
-  </button>
-
-  <button
-    onClick={() => setShowNotifications(true)}
-    className="relative w-14 h-14 rounded-full bg-white flex items-center justify-center mb-4 shadow"
-  >
-    <IoIosNotifications className="text-[#222] text-2xl" />
-    {unreadCount > 0 && (
-      <span className="absolute top-1.5 right-1.5 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
-        {unreadCount}
-      </span>
-    )}
-  </button>
+  </Link>
 
   <button
     onClick={() => setShowInventory((prev) => !prev)}
@@ -341,14 +302,14 @@ const handleBoosterClick = (item: { id: string | number; name: string }) => {
 
 <GrowSplineViewer
   plant={plant}
-  onUsePlant={handleUsePlant}
+  onUsePlant={() => {}} // Placeholder, actual logic will be backend
   onUseBooster={handleUseBooster}
-  onSeedPackDrop={(item) => setSelectedSeedPack({ id: item.id, name: item.name })}
+  onSeedPackDrop={handlePlantSeed}
 />
 
       <button
         onClick={handleNextPlant}
-        disabled={selectedPlantIdx === splinePlants.length - 1}
+        disabled={selectedPlantIdx === numberedPlants.length - 1}
         className="cursor-pointer z-10 ml-4 hover:scale-125 transition-transform duration-200"
       >
         <FaPlay className="text-yellow-300 text-2xl" />
@@ -357,10 +318,17 @@ const handleBoosterClick = (item: { id: string | number; name: string }) => {
 
     <div className="mt-3 flex justify-center">
       <LevelBar
-        level={plant.level}
-        currentXp={50}
-        requiredXp={1000}
-        plantName={plant.plantName}
+        level={plant.plantLevel || plant.level}
+        currentXp={plant.plantCurrentXp ?? 0}
+        requiredXp={(() => {
+          const lvl = plant.plantLevel || plant.level || 1;
+          const reqs = plant.template?.growthXpRequirements;
+          if (!reqs) return 1000;
+          const stageOrder = ['seed', 'sprout', 'sapling', 'mature', 'blooming'];
+          const nextStage = stageOrder[Math.min(lvl, stageOrder.length - 1)];
+          return reqs[nextStage] ?? 1000;
+        })()}
+        plantName={plant.displayName || plant.plantName || 'Unknown'}
       />
     </div>
   </div>
@@ -377,11 +345,11 @@ const handleBoosterClick = (item: { id: string | number; name: string }) => {
  <GrowInventoryPanel
   page={0}
   cardsPerPage={CARDS_PER_PAGE}
-  items={plantsState.filter(item => !('effect' in item))}
-  boosters={plantsState.filter(item => 'effect' in item)}
-  onUsePlant={handleUsePlant}
-  onSeedPackClick={handleSeedPackClick}
-  onBoosterClick={(item) => handleUseBooster(item.id)}
+  items={inventorySeeds}
+  boosters={inventoryBoosters}
+  onUsePlant={() => {}} // Placeholder, actual logic will be backend
+  onSeedPackClick={handlePlantSeed}
+  onBoosterClick={(item: any) => handleUseBooster(item.id)}
 />
 
 
@@ -393,11 +361,11 @@ const handleBoosterClick = (item: { id: string | number; name: string }) => {
     <GrowInventoryPanel
       page={0}
       cardsPerPage={CARDS_PER_PAGE}
-      items={plantsState.filter(item => !('effect' in item))} // Seed packs
-      boosters={plantsState.filter(item => 'effect' in item)} // Boosters (have "effect")
-      onUsePlant={handleUsePlant}
-      onSeedPackClick={handleSeedPackClick}
-      onBoosterClick={handleBoosterClick}
+      items={inventorySeeds} // Seed packs
+      boosters={inventoryBoosters} // Boosters (have "effect")
+      onUsePlant={() => {}} // Placeholder, actual logic will be backend
+      onSeedPackClick={handlePlantSeed}
+      onBoosterClick={(item: any) => handleUseBooster(item.id)}
 
       className="relative max-w-[90vw] max-h-[85vh] overflow-y-auto"
     />
@@ -415,74 +383,6 @@ const handleBoosterClick = (item: { id: string | number; name: string }) => {
 
         </div>
       </div>
-
-      {/* Notification Modal */}
-      {showNotifications && (
-  <div
-    className={`fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/30 transition-opacity duration-300 ${
-      notifExitAnim ? 'opacity-0' : 'opacity-100'
-    }`}
-  >
-    <div className="bg-white p-4 sm:p-6 rounded-xl shadow-lg w-[90vw] sm:w-[500px] max-h-[85vh] text-black relative overflow-y-auto">
-      <h2 className="text-xl sm:text-2xl font-extrabold text-[#245329] mb-2 text-center sm:text-left">
-        Notifications
-      </h2>
-
-<div className="-mt-1 max-h-[500px] overflow-y-auto pr-2 space-y-2">
-  {notifications.map((notif, index) => (
-    <div
-      key={index}
-      className={`transition-transform duration-300 ease-in-out bg-white rounded-xl p-3 shadow-sm ${
-        notif.read ? 'scale-[0.98] opacity-80' : 'scale-100'
-      }`}
-    >
-      <div className="flex items-start gap-3 sm:gap-4">
-        <div className={`w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center rounded-full text-white text-xs sm:text-sm ${notif.color}`}>
-          {notif.icon}
-        </div>
-        <div className="flex-1">
-          <p className="text-xs sm:text-sm font-semibold leading-snug">{notif.message}</p>
-          <p className="text-[11px] sm:text-xs text-gray-500">{notif.time}</p>
-        </div>
-      </div>
-    </div>
-  ))}
-
-
-
-
-
-      </div>
-
-      {unreadCount > 0 && (
-        <button
-          onClick={() =>
-            setNotifications((prev) =>
-              prev.map((n) => ({ ...n, read: true }))
-            )
-          }
-          className="mt-4 w-full px-4 py-2 bg-[#245329] text-white font-semibold rounded-lg hover:bg-[#1c3f22] transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg"
-        >
-          Mark All as Read
-        </button>
-      )}
-
-      <button
-        onClick={() => {
-          setNotifExitAnim(true);
-          setTimeout(() => {
-            setShowNotifications(false);
-            setNotifExitAnim(false);
-          }, 300);
-        }}
-        className="cursor-pointer absolute top-2 right-3 text-gray-500 hover:text-gray-800 text-xl transition-transform duration-300 transform hover:scale-125"
-      >
-        &times;
-      </button>
-    </div>
-  </div>
-)}
-
 
       {/* Seed Pack Modal */}
  {selectedSeedPack && (
@@ -502,7 +402,7 @@ const handleBoosterClick = (item: { id: string | number; name: string }) => {
 
       <h2 className="text-2xl font-extrabold mb-1">Seed Planted!</h2>
       <p className="text-md text-[#3e694a] font-medium">
-        You have successfully planted <span className="font-semibold text-green-700">{selectedSeedPack.name}</span> 🌱
+        You have successfully planted <span className="font-semibold text-green-700">{(selectedSeedPack as any)?.name}</span> 🌱
       </p>
 
       <button
@@ -549,7 +449,7 @@ const handleBoosterClick = (item: { id: string | number; name: string }) => {
 
       <h2 className="text-2xl font-extrabold mb-1">Booster Used!</h2>
       <p className="text-md text-[#3e694a] font-medium">
-        <span className="font-semibold text-yellow-700">{usedBooster.name}</span> was successfully applied to your plant! 🌟
+        <span className="font-semibold text-yellow-700">{(usedBooster as any)?.name}</span> was successfully applied to your plant! 🌟
       </p>
 
       <button
@@ -576,6 +476,78 @@ const handleBoosterClick = (item: { id: string | number; name: string }) => {
         animation: fade-in-up 0.4s ease-out;
       }
     `}</style>
+  </div>
+)}
+
+{pendingSeed && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/40">
+    <div className="bg-white text-[#245329] px-8 py-10 rounded-2xl shadow-xl w-[90vw] max-w-[400px] text-center relative animate-fade-in-up">
+      <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center rounded-full bg-green-100 shadow-inner">
+        {pendingSeed.template?.imageUrl && (
+          <img src={pendingSeed.template.imageUrl} alt={pendingSeed.template.name} className="w-12 h-12 object-contain" />
+        )}
+      </div>
+      <h2 className="text-2xl font-extrabold mb-1">Plant Seed?</h2>
+      <p className="text-md text-[#3e694a] font-medium mb-4">
+        Are you sure you want to plant <span className="font-semibold text-green-700">{pendingSeed.template?.name || pendingSeed.name}</span>?
+      </p>
+      <div className="flex justify-center gap-4">
+        <button
+          onClick={() => {
+            const userId = session?.user?.id;
+            const plantTemplateId = pendingSeed.plantTemplateId || pendingSeed.template?._id;
+            if (!userId || !plantTemplateId) return;
+            fetch('/api/grow/plant-seed', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId, plantTemplateId }),
+            })
+              .then(res => res.json())
+              .then(data => {
+                if (data.userPlants) setUserPlants(data.userPlants);
+                if (data.seedInventory) setSeedInventory(data.seedInventory);
+                setSelectedSeedPack(null);
+              });
+          }}
+          className="px-5 py-2 bg-[#245329] hover:bg-[#1e4424] text-white font-semibold rounded-lg shadow-lg transition-all duration-300"
+        >
+          Yes, Plant
+        </button>
+        <button
+          onClick={() => setPendingSeed(null)}
+          className="px-5 py-2 bg-gray-300 hover:bg-gray-400 text-[#245329] font-semibold rounded-lg shadow-lg transition-all duration-300"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+    <style jsx global>{`
+      @keyframes fade-in-up {
+        0% {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .animate-fade-in-up {
+        animation: fade-in-up 0.4s ease-out;
+      }
+    `}</style>
+  </div>
+)}
+
+{planting && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div className="bg-white rounded-full p-6 shadow-lg flex flex-col items-center">
+      <svg className="animate-spin h-8 w-8 text-green-600 mb-2" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+      </svg>
+      <span className="text-green-700 font-semibold">Planting...</span>
+    </div>
   </div>
 )}
 
