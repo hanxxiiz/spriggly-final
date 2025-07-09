@@ -24,11 +24,10 @@ export default function GrowInventoryItemCard({
 
   const [{ isDragging }, drag] = useDrag(() => ({
     type: item.effect ? 'booster' : 'plant',
-item: {
-  id: item.id,
-  name: item.name,
-  type: item.effect ? 'booster' : 'plant', // ✅ Include the type
-},
+    item: {
+      ...item,
+      type: item.effect ? 'booster' : 'plant', // ✅ Include the type
+    },
     canDrag: draggable,
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
