@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
   // Join seed inventory with plant templates (reuse plantTemplatesDb)
   const seedInventoryWithTemplate = seedInventory.map(seed => {
     const template = plantTemplatesDb.find(
-      t => String(t._id) === String(seed.plantTemplateId)
+      t => String(t._id) === String(seed.seedTemplateId)
     );
     return { ...seed, template };
   });
