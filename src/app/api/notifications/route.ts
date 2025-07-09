@@ -27,4 +27,25 @@ export async function GET() {
     .lean();
   console.log('Notifications found:', notifications);
   return NextResponse.json({ notifications });
+}
+
+// PATCH - Mark all notifications as read
+export async function PATCH() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  await connectDB();
+  let userObjectId;
+  try {
+    userObjectId = new mongoose.Types.ObjectId(session.user.id);
+  } catch (e) {
+    return NextResponse.json({ error: 'Invalid user id' }, { status: 400 });
+  }
+  // Update all notifications for this user to isRead: true
+  const result = await Notification.updateMany(
+    { userId: userObjectId, isRead: false },
+    { $set: { isRead: true } }
+  );
+  return NextResponse.json({ message: 'All notifications marked as read', modifiedCount: result.modifiedCount });
 } 

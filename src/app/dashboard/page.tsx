@@ -11,6 +11,25 @@ import RecentCard from '@/components/RecentCard';
 import { FiShoppingBag, FiTarget } from 'react-icons/fi';
 import { ImLeaf } from "react-icons/im";
 
+interface ProfileData {
+  username: string;
+  totalFocusTime: string;
+  tasksCompleted: number;
+  plantsCollected: number;
+  totalCoinsEarned: number;
+  longestStreak: number;
+  profilePictureUrl: string | null;
+  currentCoins: number;
+}
+
+interface LeaderboardUser {
+  rank: number;
+  name: string;
+  xp: number;
+  averageFocusTime: string;
+  profilePictureUrl: string | null;
+}
+
 const poppins = Poppins({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
@@ -58,8 +77,12 @@ const staticLeaderboardUsers = [
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const username = session?.user?.name || 'Username';
-  const userLevel = 'Level #'; // Always show placeholder
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(true);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [leaderboardError, setLeaderboardError] = useState<string | null>(null);
 
   // Daily rewards state
   const [dailyRewards, setDailyRewards] = useState<DailyRewards>({ currentDay: 1, lastClaimed: null, alreadyClaimed: false, reset: false });
@@ -97,6 +120,28 @@ export default function DashboardPage() {
       }
     };
   }, [timerTimeout]);
+
+  // Fetch profile and leaderboard on mount
+  useEffect(() => {
+    setProfileLoading(true);
+    fetch('/api/profile')
+      .then(async (res) => {
+        if (!res.ok) throw new Error('Failed to fetch profile');
+        const data = await res.json();
+        setProfile(data);
+      })
+      .catch((err) => setProfileError(err.message))
+      .finally(() => setProfileLoading(false));
+    setLeaderboardLoading(true);
+    fetch('/api/leaderboard')
+      .then(async (res) => {
+        if (!res.ok) throw new Error('Failed to fetch leaderboard');
+        const data = await res.json();
+        setLeaderboard(data.leaderboard || []);
+      })
+      .catch((err) => setLeaderboardError(err.message))
+      .finally(() => setLeaderboardLoading(false));
+  }, []);
 
   // Fetch daily rewards info on mount
   useEffect(() => {
@@ -173,6 +218,10 @@ export default function DashboardPage() {
     return 'locked';
   }
 
+  function getInitials(name: string) {
+    return name && name.length > 0 ? name[0].toUpperCase() : '?';
+  }
+
   return (
     <>
       <Navbar />
@@ -199,12 +248,29 @@ export default function DashboardPage() {
 
             {/* PROFILE CARD */}
             <div className="w-full md:w-180 bg-white rounded-2xl shadow-lg flex flex-row items-center justify-start p-6 md:p-10 min-w-0 gap-4">
-              <div className="w-30 h-30 md:w-50 md:h-50 bg-gray-300 rounded-xl flex-shrink-0" />
-              <div className="flex flex-col justify-center">
-                <div className="text-green-900 font-bold text-lg md:text-2xl">
-                  {username}
+              {profileLoading ? (
+                <div className="w-30 h-30 md:w-50 md:h-50 bg-gray-200 rounded-xl flex-shrink-0 animate-pulse" />
+              ) : profile && profile.profilePictureUrl ? (
+                <img
+                  src={profile.profilePictureUrl}
+                  alt={profile.username}
+                  className="w-30 h-30 md:w-50 md:h-50 rounded-xl object-cover flex-shrink-0"
+                />
+              ) : (
+                <div className="w-30 h-30 md:w-50 md:h-50 bg-gray-300 rounded-xl flex-shrink-0 flex items-center justify-center text-3xl font-bold text-green-900">
+                  {profile ? getInitials(profile.username) : '?'}
                 </div>
-                <div className="text-[#e3ef26] mb-2 text-sm md:text-base">{userLevel}</div>
+              )}
+              <div className="flex flex-col justify-center min-w-0">
+                <div className="text-green-900 font-bold text-lg md:text-2xl truncate">
+                  {profile ? profile.username : 'Username'}
+                </div>
+                <div className="text-[#e3ef26] mb-2 text-sm md:text-base">
+                  Level {/* You can add real level here if available */}
+                </div>
+                <div className="text-gray-700 text-xs md:text-sm mb-1">
+                  Coins: <span className="font-bold">{profile ? profile.currentCoins : '--'}</span>
+                </div>
                 <button 
                   onClick={() => router.push('/dashboard/profile')}
                   className="flex-1 text-white font-bold px-5 py-1 text-[10px] lg:text-lg lg:px-10 lg:py-2 rounded-sm lg:rounded-xl border-none cursor-pointer 
@@ -293,11 +359,16 @@ export default function DashboardPage() {
             {/* LEADERBOARD*/}
             <div className="w-full md:w-150 bg-white rounded-2xl shadow-lg flex flex-col p-4 md:p-6 min-w-0">
               <h4 className="text-green-800 font-bold text-base md:text-xl mb-4">Leaderboard</h4>
-
-              {staticLeaderboardUsers.map((user, i) => {
+              {leaderboardLoading ? (
+                <div className="text-gray-400">Loading...</div>
+              ) : leaderboardError ? (
+                <div className="text-red-500">{leaderboardError}</div>
+              ) : leaderboard.length === 0 ? (
+                <div className="text-gray-400">No leaderboard data</div>
+              ) : (
+                leaderboard.slice(0, 3).map((user, i) => {
                 const yellowShades = ['#fef08a', '#fde047', '#facc15']; 
                 const bgColor = i < 3 ? yellowShades[i] : '#fef9c3';
-
                 return (
                   <div
                     key={user.name}
@@ -308,17 +379,21 @@ export default function DashboardPage() {
                       hover:scale-105 hover:shadow-[0_0_15px_#fde047]
                     `}
                   >
-                    <div className="w-10 h-10 md:w-12 md:h-12 bg-gray-300 rounded-full mr-3 md:mr-4 flex items-center justify-center font-bold text-lg md:text-2xl">
-                      {user.name ? user.name[0].toUpperCase() : '?'}
+                      <div className="w-10 h-10 md:w-12 md:h-12 bg-gray-300 rounded-full mr-3 md:mr-4 flex items-center justify-center font-bold text-lg md:text-2xl overflow-hidden">
+                        {user.profilePictureUrl ? (
+                          <img src={user.profilePictureUrl} alt={user.name} className="w-full h-full object-cover rounded-full" />
+                        ) : (
+                          getInitials(user.name)
+                        )}
                     </div>
                     <div className="flex-1">
                       <div className="font-bold text-green-900 text-base md:text-xl">{user.name}</div>
-                      <div className="text-xs text-gray-700">Level {user.level}</div>
-                    </div>
+                        <div className="text-xs text-gray-700">XP: {user.xp}</div>
+                      </div>
                   </div>
                 );
-              })}
-
+                })
+              )}
               <div className="flex justify-center mt-2 lg:mt-8">
                 <button
                   onClick={() => router.push('/dashboard/leaderboard')}
